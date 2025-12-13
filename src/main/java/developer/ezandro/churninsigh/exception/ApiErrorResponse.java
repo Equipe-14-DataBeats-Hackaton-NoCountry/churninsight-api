@@ -4,12 +4,12 @@ import module java.base;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record ApiErrorResponse(
-        @JsonProperty("status")
+        @JsonProperty(value = "status")
         int status,
 
-        @JsonProperty("erro")
+        @JsonProperty(value = "erro")
         String error,
 
-        @JsonProperty("mensagens")
+        @JsonProperty(value = "mensagens")
         List<String> messages
 ) {}
