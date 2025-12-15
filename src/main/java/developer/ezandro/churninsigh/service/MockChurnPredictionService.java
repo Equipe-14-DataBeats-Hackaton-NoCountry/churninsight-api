@@ -1,10 +1,11 @@
 package developer.ezandro.churninsigh.service;
 
-import module java.base;
 import developer.ezandro.churninsigh.dto.PredictionRequest;
 import developer.ezandro.churninsigh.dto.PredictionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 @RequiredArgsConstructor
 @Service

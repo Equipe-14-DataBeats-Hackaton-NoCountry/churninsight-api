@@ -1,6 +1,6 @@
 package developer.ezandro.churninsigh.util;
 
-import module java.base;
+import java.util.Map;
 
 public final class JsonFieldNameMapper {
     private JsonFieldNameMapper() {}

@@ -1,7 +1,8 @@
 package developer.ezandro.churninsigh.exception;
 
-import module java.base;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
 
 public record ApiErrorResponse(
         @JsonProperty(value = "status")
