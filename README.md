@@ -17,13 +17,51 @@ Este projeto faz parte do desafio **ChurnInsight**, cujo objetivo é prever se u
 
 ## 🚀 Tecnologias utilizadas
 
-- Java 25
-- Spring Boot V4
+- Java 21
+- Spring Boot V3.5.8
 - Spring Web
 - Spring Validation
+- Spring Security (HTTP Basic Auth)
 - Maven
 - Lombok
-- (Opcional) H2 / PostgreSQL
+- MySQL
+
+---
+
+## ⚙️ Configuração inicial
+
+1. Clone o repositório
+
+2. Copie o arquivo de exemplo:
+```bash
+cp src/main/resources/application.properties.example src/main/resources/application.properties
+```
+
+3. Edite o arquivo `application.properties` e configure suas credenciais de acesso:
+```properties
+spring.security.user.name=seu_usuario
+spring.security.user.password=sua_senha
+```
+
+4. Execute o projeto:
+```bash
+mvn spring-boot:run
+```
+
+A aplicação ficará disponível em:
+```
+http://localhost:8080
+```
+
+> ⚠️ **Importante**: O arquivo `application.properties` não é versionado. Use variáveis de ambiente em produção.
+
+---
+
+## 🔐 Autenticação
+
+A API utiliza **HTTP Basic Authentication** para proteger todos os endpoints.
+
+Todas as requisições devem incluir as credenciais configuradas no `application.properties`.
 
 ---
 
@@ -67,6 +105,46 @@ Retorna estatísticas básicas das previsões realizadas.
   "taxa_churn": 0.33
 }
 ```
+
+---
+
+## 🧪 Como testar os endpoints
+
+### 🔹 Usando cURL
+
+#### POST `/predict`
+```bash
+curl -X POST http://localhost:8080/predict \
+  -u seu_usuario:sua_senha \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tempo_contrato_meses": 12,
+    "atrasos_pagamento": 1,
+    "uso_mensal": 14.5,
+    "plano": "Standard"
+  }'
+```
+
+#### GET `/stats`
+```bash
+curl -X GET http://localhost:8080/stats \
+  -u seu_usuario:sua_senha
+```
+
+---
+
+### 🔹 Usando Postman/Insomnia
+
+1. Selecione a aba **Authorization**
+2. Escolha o tipo: **Basic Auth**
+3. Preencha com as credenciais configuradas no `application.properties`
+4. Envie a requisição normalmente
+
+---
+
+### 🔹 Usando Navegador (apenas GET)
+
+Ao acessar `http://localhost:8080/stats`, o navegador solicitará as credenciais automaticamente.
 
 ---
 
@@ -143,23 +221,10 @@ Quando o modelo real estiver pronto, a implementação mock será substituída p
 
 ---
 
-## ▶️ Como executar o projeto
-
-```bash
-mvn spring-boot:run
-```
-
-A aplicação ficará disponível em:
-
-```
-http://localhost:8080
-```
-
----
-
 ## ✅ Status do projeto
 
-- MVP funcional
-- API pronta para integração com Data Science
-- Endpoints testados
-- Contrato definido
+- ✅ MVP funcional
+- ✅ API REST com autenticação
+- ✅ Endpoints protegidos com HTTP Basic Auth
+- ✅ Pronta para integração com Data Science
+- ✅ Contrato definido e testado
