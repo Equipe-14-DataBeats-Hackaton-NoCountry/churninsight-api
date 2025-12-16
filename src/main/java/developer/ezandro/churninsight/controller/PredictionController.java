@@ -1,8 +1,8 @@
-package developer.ezandro.churninsigh.controller;
+package developer.ezandro.churninsight.controller;
 
-import developer.ezandro.churninsigh.dto.PredictionRequest;
-import developer.ezandro.churninsigh.dto.PredictionResponse;
-import developer.ezandro.churninsigh.service.ChurnPredictionService;
+import developer.ezandro.churninsight.infra.api.dto.ChurnRequest;
+import developer.ezandro.churninsight.infra.api.dto.ChurnResponse;
+import developer.ezandro.churninsight.service.ChurnPredictionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +16,9 @@ public class PredictionController {
     private final ChurnPredictionService service;
 
     @PostMapping(value = "/predict")
-    public ResponseEntity<PredictionResponse> predict(@Valid @RequestBody PredictionRequest request) {
-        PredictionResponse response = this.service.predict(request);
+    public ResponseEntity<ChurnResponse> predict(@Valid @RequestBody ChurnRequest request
+    ) {
+        ChurnResponse response = service.predict(request);
         return ResponseEntity.ok(response);
     }
 }

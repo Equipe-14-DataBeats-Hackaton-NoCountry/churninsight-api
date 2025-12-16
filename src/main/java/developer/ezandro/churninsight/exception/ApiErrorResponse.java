@@ -1,4 +1,4 @@
-package developer.ezandro.churninsigh.exception;
+package developer.ezandro.churninsight.exception;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
