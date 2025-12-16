@@ -1,7 +1,7 @@
-package developer.ezandro.churninsigh.controller;
+package developer.ezandro.churninsight.controller;
 
-import developer.ezandro.churninsigh.dto.StatsResponse;
-import developer.ezandro.churninsigh.service.StatsService;
+import developer.ezandro.churninsight.infra.api.dto.StatsResponse;
+import developer.ezandro.churninsight.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

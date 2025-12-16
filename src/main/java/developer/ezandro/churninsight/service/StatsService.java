@@ -1,6 +1,6 @@
-package developer.ezandro.churninsigh.service;
+package developer.ezandro.churninsight.service;
 
-import developer.ezandro.churninsigh.dto.StatsResponse;
+import developer.ezandro.churninsight.infra.api.dto.StatsResponse;
 import org.springframework.stereotype.Service;
 
 @Service
