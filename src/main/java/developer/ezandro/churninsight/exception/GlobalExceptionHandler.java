@@ -1,4 +1,4 @@
-package developer.ezandro.churninsigh.exception;
+package developer.ezandro.churninsight.exception;
 
 import developer.ezandro.churninsigh.util.JsonFieldNameMapper;
 import org.springframework.http.HttpStatus;

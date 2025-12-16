@@ -1,4 +1,4 @@
-package developer.ezandro.churninsigh.config;
+package developer.ezandro.churninsight.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
