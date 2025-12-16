@@ -1,11 +1,11 @@
-package developer.ezandro.churninsigh.dto;
+package developer.ezandro.churninsight.infra.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record StatsResponse(
-        @JsonProperty(value = "total_avaliados")
+        @JsonProperty("total_avaliados")
         long totalEvaluated,
 
-        @JsonProperty(value = "taxa_churn")
+        @JsonProperty("taxa_churn")
         double churnRate
 ) {}
