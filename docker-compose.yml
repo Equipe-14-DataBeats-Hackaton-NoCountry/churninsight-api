@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # Banco de Dados
+  # ----------------------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: churn-db
+    restart: always # Política de reinício para resiliência
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # Otimização para economizar memória em dev
+      - --performance-schema=OFF
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - churn-net
+    # ORQUESTRAÇÃO: O Docker monitora se o banco está vivo
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # PERFORMANCE: Evita que o banco consuma toda a RAM do PC
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+  # ----------------------------------------------------------------------------
+  # API ChurnInsight
+  # ----------------------------------------------------------------------------
+  app:
+    build: .
+    container_name: churn-api
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy # Só inicia quando o banco estiver pronto
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 10808
+    ports:
+      - "${HOST_PORT}:10808" # A única porta pública
+    networks:
+      - churn-net
+    # PERFORMANCE: Garante que o Java não estoure a memória
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1024M # 1GB RAM Max
+
+networks:
+  churn-net:
+    driver: bridge # Rede isolada
+
+volumes:
+  mysql_data:
