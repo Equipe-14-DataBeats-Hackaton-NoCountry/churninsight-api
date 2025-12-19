@@ -1,9 +1,7 @@
 CREATE TABLE churn_history (
     id CHAR(36) NOT NULL PRIMARY KEY,
 
-
-        -- DADOS DE ENTRADA
-
+    -- DADOS DE ENTRADA
     gender VARCHAR(20),
     age INT,
     country VARCHAR(10),
@@ -16,17 +14,14 @@ CREATE TABLE churn_history (
     user_id CHAR(36),
 
 
-        -- SAÍDA DO MODELO
-
+    -- SAÍDA DO MODELO
     will_churn BOOLEAN,
     probability DOUBLE,
     churn_label VARCHAR(30),
 
-        -- AUDITORIA
-
+    -- AUDITORIA
     requester_id CHAR(36),
     request_ip VARCHAR(45),
-
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
