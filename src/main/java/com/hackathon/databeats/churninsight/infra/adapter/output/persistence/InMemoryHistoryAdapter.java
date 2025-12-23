@@ -3,9 +3,7 @@ package com.hackathon.databeats.churninsight.infra.adapter.output.persistence;
 import com.hackathon.databeats.churninsight.application.port.output.SaveHistoryPort;
 import com.hackathon.databeats.churninsight.domain.model.PredictionResult;
 import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.StatsResponse;
-import org.springframework.stereotype.Component;
 
-@Component
 public class InMemoryHistoryAdapter implements SaveHistoryPort {
 
     private long totalEvaluated = 0;
