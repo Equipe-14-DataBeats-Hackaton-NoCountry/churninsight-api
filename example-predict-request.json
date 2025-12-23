@@ -1,0 +1,12 @@
+{
+  "gender": "Male",
+  "age": 28,
+  "country": "Brazil",
+  "subscription_type": "Premium",
+  "listening_time": 120.5,
+  "songs_played_per_day": 45,
+  "skip_rate": 0.15,
+  "device_type": "Mobile",
+  "offline_listening": true
+}
+
