@@ -75,11 +75,17 @@ Recebe informações do cliente e retorna a previsão de churn.
 
 ```json
 {
-  "tempo_contrato_meses": 12,
-  "atrasos_pagamento": 1,
-  "uso_mensal": 14.5,
-  "plano": "Standard"
+  "gender": "Female",
+  "age": 25,
+  "country": "Brazil",
+  "subscription_type": "Basic",
+  "listening_time": 4.5,
+  "songs_played_per_day": 8,
+  "skip_rate": 0.85,
+  "device_type": "Mobile",
+  "offline_listening": false
 }
+
 ```
 
 #### 📤 Resposta
