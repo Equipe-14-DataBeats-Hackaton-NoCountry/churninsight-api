@@ -1,5 +1,6 @@
 package com.hackathon.databeats.churninsight.infra.adapter.input.web.mapper;
 
+import com.hackathon.databeats.churninsight.domain.enums.ChurnStatus;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 import com.hackathon.databeats.churninsight.domain.model.PredictionResult;
 import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.ChurnRequest;
@@ -21,7 +22,7 @@ public class WebMapper {
     public ChurnResponse toResponse(PredictionResult result) {
         return new ChurnResponse(
                 result.id(),
-                result.status(),
+                ChurnStatus.valueOf(result.status()),
                 result.probability()
         );
     }
