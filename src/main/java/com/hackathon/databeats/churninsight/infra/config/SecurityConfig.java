@@ -22,7 +22,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain publicEndpointsFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/predict", "/stats", "/actuator/**")
+                .securityMatcher("/predict", "/api/v1/churn/predict", "/stats", "/actuator/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
