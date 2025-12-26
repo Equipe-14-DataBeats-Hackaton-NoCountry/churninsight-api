@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS prediction_history (
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    churn_status VARCHAR(30) NOT NULL,
+    probability DOUBLE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+

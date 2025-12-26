@@ -1,0 +1,12 @@
+{
+  "gender": "Female",
+  "age": 25,
+  "country": "Brazil",
+  "subscription_type": "Basic",
+  "listening_time": 4.5,
+  "songs_played_per_day": 8,
+  "skip_rate": 0.85,
+  "device_type": "Mobile",
+  "offline_listening": false
+}
+
