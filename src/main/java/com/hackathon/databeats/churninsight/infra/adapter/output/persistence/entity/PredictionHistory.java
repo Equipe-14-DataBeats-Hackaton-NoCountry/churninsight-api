@@ -36,6 +36,8 @@ public class PredictionHistory {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+
     }
+
 }
 
