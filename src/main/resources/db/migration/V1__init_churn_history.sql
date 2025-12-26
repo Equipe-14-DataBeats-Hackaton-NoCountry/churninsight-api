@@ -15,9 +15,8 @@ CREATE TABLE churn_history (
 
 
     -- SAÍDA DO MODELO
-    will_churn BOOLEAN,
+    churn_status ENUM('WILL_CHURN', 'WILL_STAY') NOT NULL,
     probability DOUBLE,
-    churn_label VARCHAR(30),
 
     -- AUDITORIA
     requester_id CHAR(36),
