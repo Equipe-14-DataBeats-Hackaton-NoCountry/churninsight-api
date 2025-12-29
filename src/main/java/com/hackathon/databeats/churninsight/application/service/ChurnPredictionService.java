@@ -35,7 +35,7 @@ public class ChurnPredictionService implements PredictChurnUseCase {
 
         var result = new PredictionResult(UUID.randomUUID(), status, probability);
 
-        historyPort.savePrediction(result);
+        historyPort.savePrediction(profile, result);
 
         return result;
     }

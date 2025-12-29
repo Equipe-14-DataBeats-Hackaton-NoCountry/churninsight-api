@@ -1,13 +1,14 @@
 package com.hackathon.databeats.churninsight.infra.adapter.output.persistence;
 
 import com.hackathon.databeats.churninsight.application.port.output.SaveHistoryPort;
+import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 import com.hackathon.databeats.churninsight.domain.model.PredictionResult;
 import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.StatsResponse;
 import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.entity.PredictionHistory;
 import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.mapper.PersistenceMapper;
 import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository.PredictionRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,10 +19,10 @@ public class MySQLHistoryAdapter implements SaveHistoryPort {
     private final PersistenceMapper mapper;
 
     @Override
-    @CacheEvict(value = "stats", allEntries = true)
-    public void savePrediction(PredictionResult result) {
-        PredictionHistory entity = mapper.toEntity(result);
-        repository.save(entity);
+    @Transactional
+    public void savePrediction(CustomerProfile profile, PredictionResult result) {
+        PredictionHistory entity = mapper.toEntity(profile, result);
+        repository.saveAndFlush(entity);
     }
 
     @Override
