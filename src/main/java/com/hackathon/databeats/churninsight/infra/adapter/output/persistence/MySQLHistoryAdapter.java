@@ -7,6 +7,7 @@ import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.ent
 import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.mapper.PersistenceMapper;
 import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository.PredictionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,6 +18,7 @@ public class MySQLHistoryAdapter implements SaveHistoryPort {
     private final PersistenceMapper mapper;
 
     @Override
+    @CacheEvict(value = "stats", allEntries = true)
     public void savePrediction(PredictionResult result) {
         PredictionHistory entity = mapper.toEntity(result);
         repository.save(entity);
