@@ -23,4 +23,3 @@ CREATE TABLE churn_history (
     request_ip VARCHAR(45),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
-
