@@ -8,5 +8,4 @@ public record ChurnResponse(
         UUID id,
         ChurnStatus churnStatus,
         Double churnProbability
-) {
-}
+) {}

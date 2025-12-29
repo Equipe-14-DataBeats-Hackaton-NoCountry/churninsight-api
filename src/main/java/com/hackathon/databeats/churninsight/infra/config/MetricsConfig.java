@@ -11,9 +11,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class MetricsConfig {
-
-    private final MeterRegistry registry;
-
     private final AtomicLong activeRequests = new AtomicLong(0);
 
     private final Counter predictionsCounter;
@@ -23,8 +20,6 @@ public class MetricsConfig {
     private final Timer predictionTimer;
 
     public MetricsConfig(MeterRegistry registry) {
-        this.registry = registry;
-
         this.predictionsCounter = Counter.builder("houseprice.predictions.total")
                 .description("Total acumulado de previsoes realizadas com sucesso")
                 .tag("type", "individual")

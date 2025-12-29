@@ -1,47 +1,53 @@
 package com.hackathon.databeats.churninsight.infra.adapter.input.web;
 
 import com.hackathon.databeats.churninsight.application.port.input.PredictChurnUseCase;
-import com.hackathon.databeats.churninsight.application.service.ChurnPredictionService;
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.ChurnRequest;
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.ChurnResponse;
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.mapper.WebMapper;
-import com.hackathon.databeats.churninsight.infra.config.MetricsConfig;
+import com.hackathon.databeats.churninsight.application.port.input.PredictionStatsUseCase;
+import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
+import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.PredictionStatsResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
-@RequiredArgsConstructor
 public class PredictionController {
+    private final PredictionStatsUseCase predictionStatsUseCase;
+    private final PredictChurnUseCase predictChurnUseCase;
 
-    private final PredictChurnUseCase useCase;
-    @SuppressWarnings("unused") // Mantido para futura integração com o fluxo real
-    private final ChurnPredictionService churnPredictionService;
-    private final WebMapper mapper;
-    private final MetricsConfig metrics;
+    public PredictionController(PredictionStatsUseCase predictionStatsUseCase,
+                                PredictChurnUseCase predictChurnUseCase) {
+        this.predictionStatsUseCase = predictionStatsUseCase;
+        this.predictChurnUseCase = predictChurnUseCase;
+    }
 
-    @PostMapping("/predict")
-    public ResponseEntity<ChurnResponse> predict(@Valid @RequestBody ChurnRequest request) {
-        long start = System.nanoTime();
-        metrics.incrementActiveRequests();
+    @PostMapping(value = "/predict")
+    public Map<String, Object> predict(@Valid @RequestBody CustomerProfile profile, HttpServletRequest request) {
+        String requesterId = "hackathon-user";
+        String requestIp = request.getRemoteAddr();
 
-        try {
-            var profile = mapper.toDomain(request);
+        this.predictChurnUseCase.predict(profile, requesterId, requestIp);
 
-            var result = useCase.execute(profile);
-            metrics.recordPrediction();
+        PredictionStatsResponse stats = this.predictionStatsUseCase.predictWithStats(profile, requesterId, requestIp);
 
-            return ResponseEntity.ok(mapper.toResponse(result));
+        Map<String, Float> classProbs = stats.getClassProbabilities();
+        String label = classProbs.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("UNKNOWN");
 
-        } catch (Exception e) {
-            metrics.recordError();
-            throw e;
-        } finally {
-            metrics.decrementActiveRequests();
-            metrics.recordLatency(System.nanoTime() - start);
-        }
+        double probability = classProbs.getOrDefault(label, 0f);
+
+        return Map.of("label", label, "probability", probability);
+    }
+
+    @PostMapping(value = "/stats")
+    public PredictionStatsResponse stats(@RequestBody CustomerProfile profile, HttpServletRequest request) {
+        String requesterId = "hackathon-user";
+        String requestIp = request.getRemoteAddr();
+
+        return this.predictionStatsUseCase.predictWithStats(profile, requesterId, requestIp);
     }
 }

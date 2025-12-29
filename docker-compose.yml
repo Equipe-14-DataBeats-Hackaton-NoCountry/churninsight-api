@@ -22,18 +22,19 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - churn-net
-    # ORQUESTRAÇÃO: O Docker monitora se o banco está vivo
+    ports:
+      - "3306:3306"   # expõe a porta para o host (Beekeeper/DBeaver/Workbench)
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # PERFORMANCE: Evita que o banco consuma toda a RAM do PC
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 512M
+
   # ----------------------------------------------------------------------------
   # API ChurnInsight
   # ----------------------------------------------------------------------------
@@ -51,10 +52,9 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SERVER_PORT: 10808
     ports:
-      - "${HOST_PORT}:10808" # A única porta pública
+      - "10808:10808" # Porta pública da API
     networks:
       - churn-net
-    # PERFORMANCE: Garante que o Java não estoure a memória
     deploy:
       resources:
         limits:
@@ -63,7 +63,7 @@ services:
 
 networks:
   churn-net:
-    driver: bridge # Rede isolada
+    driver: bridge
 
 volumes:
   mysql_data:
