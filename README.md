@@ -26,17 +26,17 @@ O projeto segue os princípios da **Arquitetura Hexagonal**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      CAMADA DE ENTRADA                       │
+│                      CAMADA DE ENTRADA                      │
 │  ┌─────────────────┐          ┌──────────────────┐          │
 │  │ REST Controller │          │  Rate Limiter    │          │
 │  │   /predict      │  ──────► │   Filter         │          │
 │  │   /stats        │          └──────────────────┘          │
-│  └─────────────────┘                                         │
+│  └─────────────────┘                                        │
 └─────────────────────────────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   CAMADA DE APLICAÇÃO                        │
+│                   CAMADA DE APLICAÇÃO                       │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │       ChurnPredictionService (Use Cases)             │   │
 │  │  • PredictChurnUseCase                               │   │
@@ -46,21 +46,21 @@ O projeto segue os princípios da **Arquitetura Hexagonal**:
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      CAMADA DE DOMÍNIO                       │
-│  ┌──────────────────┐    ┌─────────────────────┐           │
-│  │ CustomerProfile  │    │  ChurnStatus (Enum) │           │
-│  │  (Value Object)  │    │  • WILL_CHURN       │           │
-│  └──────────────────┘    │  • WILL_STAY        │           │
-│                          └─────────────────────┘           │
+│                      CAMADA DE DOMÍNIO                      │
+│  ┌──────────────────┐    ┌─────────────────────┐            │
+│  │ CustomerProfile  │    │  ChurnStatus (Enum) │            │
+│  │  (Value Object)  │    │  • WILL_CHURN       │            │
+│  └──────────────────┘    │  • WILL_STAY        │            │
+│                          └─────────────────────┘            │
 └─────────────────────────────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   CAMADA DE INFRAESTRUTURA                   │
-│  ┌──────────────────┐           ┌─────────────────────┐     │
-│  │ OnnxRuntimeAdapter│          │ MySQLHistoryAdapter │     │
-│  │  (Inferência ML) │          │  (Persistência)     │     │
-│  └──────────────────┘           └─────────────────────┘     │
+│                   CAMADA DE INFRAESTRUTURA                  │
+│  ┌───────────────────┐           ┌─────────────────────┐    │
+│  │ OnnxRuntimeAdapter│           │ MySQLHistoryAdapter │    │
+│  │  (Inferência ML)  │           │  (Persistência)     │    │
+│  └───────────────────┘           └─────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
