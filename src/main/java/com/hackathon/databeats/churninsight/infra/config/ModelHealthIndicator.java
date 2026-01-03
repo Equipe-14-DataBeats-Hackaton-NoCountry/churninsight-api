@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 @Component("model")
 public class ModelHealthIndicator implements HealthIndicator {
-
     private final LoadModelPort loadModelPort;
 
     public ModelHealthIndicator(LoadModelPort loadModelPort) {

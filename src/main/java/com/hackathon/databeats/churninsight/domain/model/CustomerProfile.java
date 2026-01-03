@@ -1,7 +1,6 @@
 package com.hackathon.databeats.churninsight.domain.model;
 
 import jakarta.validation.constraints.*;
-
 import lombok.*;
 
 @Data
@@ -26,10 +25,6 @@ public class CustomerProfile {
     @NotNull(message = "ListeningTime é obrigatório")
     @Positive(message = "ListeningTime deve ser positivo")
     private Double listeningTime;
-
-    @NotNull(message = "SongsPlayed é obrigatório")
-    @Min(value = 0, message = "SongsPlayed não pode ser negativo")
-    private Integer songsPlayed;
 
     @NotNull(message = "SongsPlayedPerDay é obrigatório")
     @Min(value = 0, message = "SongsPlayedPerDay não pode ser negativo")

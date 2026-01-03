@@ -51,6 +51,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SERVER_PORT: 10808
+
+      # Variáveis de segurança injetadas no container
+      SECURITY_USER: ${SECURITY_USER}
+      SECURITY_PASSWORD: ${SECURITY_PASSWORD}
+      SECURITY_ROLES: ${SECURITY_ROLES}
+
     ports:
       - "10808:10808" # Porta pública da API
     networks:

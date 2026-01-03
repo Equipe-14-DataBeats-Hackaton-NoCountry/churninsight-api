@@ -12,6 +12,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class RateLimitingFilter extends OncePerRequestFilter {
-
     private static final Logger log = LoggerFactory.getLogger(RateLimitingFilter.class);
 
     private final Cache<String, Bucket> buckets;
@@ -55,8 +55,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         if (isExcludedPath(request.getRequestURI())) {
             filterChain.doFilter(request, response);

@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public class ChurnPredictionService implements PredictChurnUseCase, PredictionStatsUseCase {
-
     private final SaveHistoryPort saveHistoryPort;
     private final OnnxRuntimeAdapter onnxAdapter;
 
@@ -38,7 +37,8 @@ public class ChurnPredictionService implements PredictChurnUseCase, PredictionSt
             history.setCountry(profile.getCountry());
             history.setSubscriptionType(profile.getSubscriptionType());
             history.setListeningTime(profile.getListeningTime());
-            history.setSongsPlayed(profile.getSongsPlayed() != null ? profile.getSongsPlayed() : 0);
+            history.setSongsPlayedPerDay(profile.getSongsPlayedPerDay() != null ? profile.getSongsPlayedPerDay() : 0);
+            history.setAdsListenedPerWeek(profile.getAdsListenedPerWeek() != null ? profile.getAdsListenedPerWeek() : 0);
             history.setSkipRate(profile.getSkipRate());
             history.setDeviceType(profile.getDeviceType());
             history.setOfflineListening(profile.getOfflineListening() != null && profile.getOfflineListening());
@@ -65,14 +65,13 @@ public class ChurnPredictionService implements PredictChurnUseCase, PredictionSt
             double churnProbability = prediction[0];
             boolean willChurn = churnProbability > 0.5;
 
-            // Exemplo simples: assumindo que o modelo retorna [CHURN, ACTIVE]
             Map<String, Float> classProbs = Map.of(
                     ChurnStatus.WILL_CHURN.name(), prediction[0],
                     ChurnStatus.WILL_STAY.name(), prediction.length > 1 ? prediction[1] : 1 - prediction[0]
             );
 
             return PredictionStatsResponse.builder()
-                    .label(ChurnStatus.valueOf((willChurn ? ChurnStatus.WILL_CHURN : ChurnStatus.WILL_STAY).name()))
+                    .label(willChurn ? ChurnStatus.WILL_CHURN : ChurnStatus.WILL_STAY)
                     .probability(churnProbability)
                     .probabilities(prediction)
                     .classProbabilities(classProbs)

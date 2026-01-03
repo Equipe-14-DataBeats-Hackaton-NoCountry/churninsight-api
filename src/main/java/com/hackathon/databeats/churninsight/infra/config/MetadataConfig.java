@@ -10,12 +10,8 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 public class MetadataConfig {
-
     private double maxSkipRate = 2.0;
-
     private double minListeningTime = 6.0;
-
     private int minSongsPlayed = 10;
-
     private double highRiskBaseProbability = 0.70;
 }

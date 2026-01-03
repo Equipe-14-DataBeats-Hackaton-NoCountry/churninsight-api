@@ -28,8 +28,11 @@ public class PredictionHistoryEntity {
     @Column(name = "listening_time")
     private double listeningTime;
 
-    @Column(name = "songs_played")
-    private int songsPlayed;
+    @Column(name = "songs_played_per_day")
+    private int songsPlayedPerDay;
+
+    @Column(name = "ads_listened_per_week")
+    private int adsListenedPerWeek;
 
     @Column(name = "skip_rate")
     private double skipRate;

@@ -1,236 +1,503 @@
-# 📌 ChurnInsight – Back-end API
+# ChurnInsight API 🎵
 
-API REST desenvolvida em Java com Spring Boot para disponibilizar previsões de churn (cancelamento de clientes) para sistemas internos da empresa.
+API de Machine Learning para predição de churn de usuários em plataformas de streaming de música, desenvolvida com Spring Boot e ONNX Runtime.
 
-Este projeto faz parte do desafio **ChurnInsight**, cujo objetivo é prever se um cliente está propenso a cancelar um serviço recorrente.
+## 📋 Sobre o Projeto
 
----
+ChurnInsight é uma aplicação que utiliza um modelo de Logistic Regression treinado com técnica SMOTE para prever a probabilidade de cancelamento (churn) de assinantes de serviços de música. A API recebe dados comportamentais do usuário e retorna a probabilidade de churn em tempo real.
 
-## 🧠 Visão Geral
+### Características Principais
 
-- O modelo de Data Science é responsável pela predição de churn.
-- O back-end expõe uma API REST para consumo dessa predição.
-- Atualmente, o projeto utiliza uma **implementação mock de predição**, apenas para simulação e testes do MVP.
-- A API já está preparada para integração futura com o modelo real.
-
----
-
-## 🚀 Tecnologias utilizadas
-
-- Java 21
-- Spring Boot V3.5.8
-- Spring Web
-- Spring Validation
-- Spring Security (HTTP Basic Auth)
-- Maven
-- Lombok
-- MySQL
+- ✅ **Inferência em tempo real** usando ONNX Runtime
+- ✅ **Arquitetura Hexagonal** (Ports & Adapters)
+- ✅ **Cache inteligente** com Caffeine
+- ✅ **Rate Limiting** por IP/usuário
+- ✅ **Métricas** via Actuator/Prometheus
+- ✅ **Health Check** personalizado para o modelo
+- ✅ **Histórico de predições** persistido em MySQL
+- ✅ **Segurança** com Spring Security (HTTP Basic)
+- ✅ **Containerização** com Docker
 
 ---
 
-## ⚙️ Configuração inicial
+## 🏗️ Arquitetura
 
-1. Clone o repositório
+O projeto segue os princípios da **Arquitetura Hexagonal**:
 
-2. Copie o arquivo de exemplo:
-```bash
-cp src/main/resources/application.properties.example src/main/resources/application.properties
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CAMADA DE ENTRADA                       │
+│  ┌─────────────────┐          ┌──────────────────┐          │
+│  │ REST Controller │          │  Rate Limiter    │          │
+│  │   /predict      │  ──────► │   Filter         │          │
+│  │   /stats        │          └──────────────────┘          │
+│  └─────────────────┘                                         │
+└─────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   CAMADA DE APLICAÇÃO                        │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │       ChurnPredictionService (Use Cases)             │   │
+│  │  • PredictChurnUseCase                               │   │
+│  │  • PredictionStatsUseCase                            │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      CAMADA DE DOMÍNIO                       │
+│  ┌──────────────────┐    ┌─────────────────────┐           │
+│  │ CustomerProfile  │    │  ChurnStatus (Enum) │           │
+│  │  (Value Object)  │    │  • WILL_CHURN       │           │
+│  └──────────────────┘    │  • WILL_STAY        │           │
+│                          └─────────────────────┘           │
+└─────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   CAMADA DE INFRAESTRUTURA                   │
+│  ┌──────────────────┐           ┌─────────────────────┐     │
+│  │ OnnxRuntimeAdapter│          │ MySQLHistoryAdapter │     │
+│  │  (Inferência ML) │          │  (Persistência)     │     │
+│  └──────────────────┘           └─────────────────────┘     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-3. Edite o arquivo `application.properties` e configure suas credenciais de acesso:
+---
+
+## 🚀 Tecnologias
+
+### Core
+- **Java 21**
+- **Spring Boot 3.5.9**
+- **Spring Security** (HTTP Basic Auth)
+- **Spring Data JPA** + Hibernate
+- **Spring Validation** (Jakarta Validation)
+
+### Machine Learning
+- **ONNX Runtime 1.19.2** (inferência do modelo)
+- **Logistic Regression com SMOTE** (modelo treinado)
+
+### Banco de Dados
+- **MySQL 8.0** (mysql-connector-j)
+- **Flyway** (migrações de schema)
+
+### Cache & Performance
+- **Caffeine Cache 3.1.8** (cache em memória)
+- **Bucket4j 8.14.0** (rate limiting)
+
+### Observabilidade
+- **Spring Boot Actuator**
+- **Micrometer** + **Prometheus Registry**
+- **Custom Health Indicators**
+
+### Utilitários
+- **Lombok** (redução de boilerplate)
+- **dotenv-java 3.2.0** (gerenciamento de variáveis de ambiente)
+- **Univocity Parsers 2.9.1** (processamento de dados)
+
+### Containerização
+- **Docker** + **Docker Compose**
+- **Multi-stage build** para otimização de imagem
+
+---
+
+## 📊 Métricas do Modelo
+
+O modelo ONNX foi treinado com as seguintes características:
+
+| Métrica | Valor |
+|---------|-------|
+| Accuracy | 51.44% |
+| Precision | 26.76% |
+| Recall | 50.48% |
+| F1-Score | 34.98% |
+| AUC-ROC | 50.05% |
+| Threshold Ótimo | 0.412 |
+
+**Features Numéricas:**
+- `age`, `listening_time`, `songs_played_per_day`, `skip_rate`, `ads_listened_per_week`, `offline_listening`
+
+**Features Categóricas:**
+- `gender`, `country`, `subscription_type`, `device_type`
+
+---
+
+## ⚙️ Configuração e Execução
+
+### Pré-requisitos
+
+- Docker & Docker Compose instalados
+- Porta `10808` (API) e `3306` (MySQL) disponíveis
+
+### 1. Configurar Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```env
+# Database
+DB_NAME=churn_db
+DB_ROOT_PASSWORD=seu_password_root_aqui
+DB_USER=churn_user
+DB_PASSWORD=seu_password_user_aqui
+DB_URL=jdbc:mysql://localhost:3306/churn_db
+
+# Security
+SECURITY_USER=admin
+SECURITY_PASSWORD=seu_password_seguro_aqui
+SECURITY_ROLES=ADMIN
+```
+
+> ⚠️ **IMPORTANTE:** Nunca commite o arquivo `.env` no repositório! Ele já está no `.gitignore`.
+
+### 2. Executar com Docker Compose
+
+```bash
+# Build e start dos containers
+docker-compose up --build
+
+# Ou em modo detached (background)
+docker-compose up -d --build
+```
+
+A API estará disponível em: `http://localhost:10808`
+
+### 3. Verificar Health Check
+
+```bash
+curl http://localhost:10808/actuator/health
+```
+
+Resposta esperada:
+```json
+{
+  "status": "UP",
+  "components": {
+    "model": {
+      "status": "UP",
+      "details": {
+        "status": "Modelo ONNX carregado com sucesso",
+        "session": "Ativa"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 📡 Endpoints da API
+
+### 🔐 Autenticação
+
+Todos os endpoints (exceto `/actuator/health`) requerem **HTTP Basic Authentication**.
+
+Adicione o header:
+```
+Authorization: Basic base64(username:password)
+```
+
+### 1. Predição Simples
+
+**POST** `/predict`
+
+Realiza uma predição e retorna apenas o resultado final.
+
+**Request Body:**
+```json
+{
+  "gender": "Male",
+  "age": 28,
+  "country": "BR",
+  "subscriptionType": "Premium",
+  "listeningTime": 120.5,
+  "songsPlayedPerDay": 45,
+  "skipRate": 0.35,
+  "adsListenedPerWeek": 0,
+  "deviceType": "Mobile",
+  "offlineListening": true,
+  "userId": "user-123-abc"
+}
+```
+
+**Response:**
+```json
+{
+  "label": "WILL_STAY",
+  "probability": 0.3245
+}
+```
+
+### 2. Predição com Estatísticas
+
+**POST** `/stats`
+
+Retorna predição com probabilidades detalhadas de cada classe.
+
+**Request Body:** (mesmo formato do `/predict`)
+
+**Response:**
+```json
+{
+  "label": "WILL_STAY",
+  "probability": 0.3245,
+  "probabilities": [0.3245, 0.6755],
+  "classProbabilities": {
+    "WILL_CHURN": 0.3245,
+    "WILL_STAY": 0.6755
+  }
+}
+```
+
+### 3. Métricas (Prometheus)
+
+**GET** `/actuator/metrics`
+
+Retorna métricas detalhadas da aplicação.
+
+**GET** `/actuator/prometheus`
+
+Retorna métricas no formato Prometheus.
+
+---
+
+## 🛡️ Segurança
+
+### Rate Limiting
+
+A API implementa rate limiting para evitar abuso:
+
+- **50 requisições/segundo** por IP ou usuário autenticado
+- **Burst capacity:** 100 requisições
+- Resposta `429 Too Many Requests` quando o limite é excedido
+
+Headers de resposta:
+```
+X-Rate-Limit-Limit: 100
+X-Rate-Limit-Remaining: 87
+```
+
+### Validações
+
+Todos os campos do `CustomerProfile` são validados:
+
+| Campo | Validação |
+|-------|-----------|
+| `age` | Entre 10 e 120 |
+| `listeningTime` | > 0 |
+| `songsPlayedPerDay` | >= 0 |
+| `skipRate` | Entre 0.0 e 1.0 |
+| `adsListenedPerWeek` | >= 0 |
+| Campos de texto | Não podem ser vazios |
+
+---
+
+## 📦 Estrutura do Projeto
+
+```
+src/main/java/com/hackathon/databeats/churninsight/
+├── application/
+│   ├── port/
+│   │   ├── input/          # Use Cases (interfaces)
+│   │   └── output/         # Ports para adapters
+│   └── service/            # Implementação dos Use Cases
+├── domain/
+│   ├── enums/              # ChurnStatus
+│   ├── exception/          # Exceções de domínio
+│   └── model/              # CustomerProfile (Value Object)
+├── infra/
+│   ├── adapter/
+│   │   ├── input/web/      # Controllers REST
+│   │   └── output/
+│   │       ├── inference/  # OnnxRuntimeAdapter
+│   │       └── persistence/ # MySQL Adapter
+│   ├── config/             # Configurações Spring
+│   ├── exception/          # Global Exception Handler
+│   ├── filter/             # Rate Limiting Filter
+│   └── util/               # Utilitários
+└── ChurnInsightApplication.java
+
+src/main/resources/
+├── db.migration/           # Scripts Flyway
+│   └── V1__init_churn_history.sql
+├── metadata.json           # Metadados do modelo
+├── modelo_hackathon.onnx   # Modelo ONNX
+└── application.properties
+```
+
+---
+
+## 🔧 Configurações Avançadas
+
+### Cache (application.properties)
+
 ```properties
-spring.security.user.name=seu_usuario
-spring.security.user.password=sua_senha
+app.cache.ttl-minutes=15
+app.cache.max-size=20000
 ```
 
-4. Execute o projeto:
+### Rate Limiting
+
+```properties
+app.rate-limit.requests-per-second=50
+app.rate-limit.burst-capacity=100
+```
+
+### JVM Tuning (Dockerfile)
+
+O container está configurado com:
+- **ZGC (Z Garbage Collector)** para baixa latência
+- **MaxRAMPercentage=75%** (usa 75% da RAM do container)
+
+---
+
+## 📈 Monitoramento
+
+### Métricas Customizadas
+
+- `houseprice.predictions.total` - Total de predições realizadas
+- `houseprice.prediction.latency` - Latência de inferência (p50, p95, p99)
+- `houseprice.requests.active` - Requisições ativas no momento
+- `houseprice.errors.total` - Total de erros acumulados
+
+### Health Check Customizado
+
+O endpoint `/actuator/health` verifica:
+- ✅ Status do banco de dados
+- ✅ Modelo ONNX carregado
+- ✅ Sessão ONNX ativa
+
+---
+
+## 🗄️ Schema do Banco de Dados
+
+```sql
+CREATE TABLE churn_history (
+    id CHAR(36) PRIMARY KEY,
+    
+    -- Dados de entrada
+    gender VARCHAR(20),
+    age INT,
+    country VARCHAR(10),
+    subscription_type VARCHAR(30),
+    listening_time DOUBLE,
+    songs_played_per_day INT,
+    skip_rate DOUBLE,
+    ads_listened_per_week INT,
+    device_type VARCHAR(30),
+    offline_listening BOOLEAN,
+    user_id CHAR(36),
+    
+    -- Saída do modelo
+    churn_status ENUM('WILL_CHURN', 'WILL_STAY') NOT NULL,
+    probability DOUBLE,
+    
+    -- Auditoria
+    requester_id CHAR(36),
+    request_ip VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🧪 Testando a API
+
+### Usando cURL
+
 ```bash
-mvn spring-boot:run
-```
-
-A aplicação ficará disponível em:
-```
-http://localhost:8080
-```
-
-> ⚠️ **Importante**: O arquivo `application.properties` não é versionado. Use variáveis de ambiente em produção.
-
----
-
-## 🔐 Autenticação
-
-A API utiliza **HTTP Basic Authentication** para proteger todos os endpoints.
-
-Todas as requisições devem incluir as credenciais configuradas no `application.properties`.
-
----
-
-## 🔗 Endpoints disponíveis
-
-### ✅ POST `/predict`
-
-Recebe informações do cliente e retorna a previsão de churn.
-
-#### 📥 Requisição
-
-```json
-{
-  "gender": "Female",
-  "age": 25,
-  "country": "Brazil",
-  "subscription_type": "Basic",
-  "listening_time": 4.5,
-  "songs_played_per_day": 8,
-  "skip_rate": 0.85,
-  "device_type": "Mobile",
-  "offline_listening": false
-}
-
-```
-
-#### 📤 Resposta
-
-```json
-{
-  "previsao": "Vai continuar",
-  "probabilidade": 0.20
-}
-```
-
----
-
-### ✅ GET `/stats`
-
-Retorna estatísticas básicas das previsões realizadas.
-
-#### 📤 Resposta
-
-```json
-{
-  "total_avaliados": 3,
-  "taxa_churn": 0.33
-}
-```
-
----
-
-## 🧪 Como testar os endpoints
-
-### 🔹 Usando cURL
-
-#### POST `/predict`
-```bash
-curl -X POST http://localhost:8080/predict \
-  -u seu_usuario:sua_senha \
+# Predição simples (com autenticação)
+curl -X POST http://localhost:10808/predict \
+  -u admin:sua_senha_aqui \
   -H "Content-Type: application/json" \
   -d '{
-    "tempo_contrato_meses": 12,
-    "atrasos_pagamento": 1,
-    "uso_mensal": 14.5,
-    "plano": "Standard"
+    "gender": "Female",
+    "age": 32,
+    "country": "US",
+    "subscriptionType": "Free",
+    "listeningTime": 45.2,
+    "songsPlayedPerDay": 15,
+    "skipRate": 0.65,
+    "adsListenedPerWeek": 25,
+    "deviceType": "Desktop",
+    "offlineListening": false,
+    "userId": "test-user-456"
   }'
 ```
 
-#### GET `/stats`
+### Usando Postman/Insomnia
+
+1. Configure **Authorization → Basic Auth**
+2. Username: valor de `SECURITY_USER` no `.env`
+3. Password: valor de `SECURITY_PASSWORD` no `.env`
+4. Body: JSON do CustomerProfile
+
+---
+
+## 🐛 Troubleshooting
+
+### Erro: "Modelo ONNX não carregado"
+
+**Solução:** Verifique se o arquivo `modelo_hackathon.onnx` está em `src/main/resources/`
+
+### Erro: "Connection refused" ao MySQL
+
+**Solução:** Aguarde o health check do MySQL:
 ```bash
-curl -X GET http://localhost:8080/stats \
-  -u seu_usuario:sua_senha
+docker-compose logs db
+# Aguarde até ver: "ready for connections"
+```
+
+### Erro 429 (Too Many Requests)
+
+**Solução:** Aguarde alguns segundos ou aumente o limite em `application.properties`
+
+### Container da API não inicia
+
+**Solução:** Verifique as variáveis de ambiente no `.env` e os logs:
+```bash
+docker-compose logs app
 ```
 
 ---
 
-### 🔹 Usando Postman/Insomnia
+## 👥 Equipe
 
-1. Selecione a aba **Authorization**
-2. Escolha o tipo: **Basic Auth**
-3. Preencha com as credenciais configuradas no `application.properties`
-4. Envie a requisição normalmente
+### Time Back-End 💻
+- [**Ezandro Bueno**](https://github.com/ezbueno)
+- [**Jorge Filipi Dias**](https://github.com/jorgefilipi)
+- [**Wanderson Souza**](https://github.com/wandersondevops)
+- [**Wendell Dorta**](https://github.com/WendellD3v)
 
----
-
-### 🔹 Usando Navegador (apenas GET)
-
-Ao acessar `http://localhost:8080/stats`, o navegador solicitará as credenciais automaticamente.
-
----
-
-## ⚠️ Validação de entrada
-
-Caso algum campo obrigatório esteja ausente ou inválido, a API retorna erro 400:
-
-```json
-{
-  "status": 400,
-  "erro": "Erro de validação",
-  "mensagens": [
-    "O campo 'tempo_contrato_meses' é inválido ou obrigatório"
-  ]
-}
-```
+### Time Data Science 📊
+- [**André Ribeiro**](https://github.com/andrerochads)
+- [**Kelly Muehlmann**](https://github.com/kellymuehlmann)
+- **Luiz Alves**
+- [**Mariana Fernandes**](https://github.com/mari-martins-fernandes)
 
 ---
 
-## ✅ Exemplos de Testes
+## 📝 Licença
 
-### Cliente com alto risco
-
-```json
-{
-  "tempo_contrato_meses": 3,
-  "atrasos_pagamento": 4,
-  "uso_mensal": 6.0,
-  "plano": "Basic"
-}
-```
-
-Resposta:
-
-```json
-{
-  "previsao": "Vai cancelar",
-  "probabilidade": 0.95
-}
-```
+Este projeto foi desenvolvido para o **Hackathon DataBeats 2026**.
 
 ---
 
-### Cliente com baixo risco
+## 🤝 Contribuindo
 
-```json
-{
-  "tempo_contrato_meses": 36,
-  "atrasos_pagamento": 0,
-  "uso_mensal": 30.5,
-  "plano": "Premium"
-}
-```
-
-Resposta:
-
-```json
-{
-  "previsao": "Vai continuar",
-  "probabilidade": 0.01
-}
-```
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
 
 ---
 
-## 🔄 Integração futura com Data Science
+## 📧 Contato
 
-Quando o modelo real estiver pronto, a implementação mock será substituída por uma implementação real de predição, mantendo:
-
-- Endpoints atuais
-- Contrato JSON
-- Validação
-- Tratamento de erros
+Para dúvidas ou sugestões, abra uma issue no repositório ou entre em contato com a equipe.
 
 ---
 
-## ✅ Status do projeto
-
-- ✅ MVP funcional
-- ✅ API REST com autenticação
-- ✅ Endpoints protegidos com HTTP Basic Auth
-- ✅ Pronta para integração com Data Science
-- ✅ Contrato definido e testado
+**Desenvolvido com ❤️ usando Spring Boot e ONNX Runtime | Hackathon ONE 2026 - Equipe DataBeats**
