@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
 public class NetworkUtils {
-    private NetworkUtils() { }
+    private NetworkUtils() {}
 
     public static String getClientIp(HttpServletRequest request) {
         if (request == null) {

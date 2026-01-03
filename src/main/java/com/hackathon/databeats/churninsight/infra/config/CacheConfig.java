@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableCaching
 public class CacheConfig {
-
     private static final Logger log = LoggerFactory.getLogger(CacheConfig.class);
 
     @Value("${app.cache.ttl-minutes}")
