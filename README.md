@@ -2,6 +2,8 @@
 
 API de Machine Learning para predição de churn de usuários em plataformas de streaming de música, desenvolvida com Spring Boot e ONNX Runtime.
 
+> 🏆 Projeto desenvolvido pela **Equipe DataBeats** para o **Hackathon ONE (Oracle Next Education)**
+
 ## 📋 Sobre o Projeto
 
 ChurnInsight é uma aplicação que utiliza um modelo de Logistic Regression treinado com técnica SMOTE para prever a probabilidade de cancelamento (churn) de assinantes de serviços de música. A API recebe dados comportamentais do usuário e retorna a probabilidade de churn em tempo real.
@@ -69,7 +71,7 @@ O projeto segue os princípios da **Arquitetura Hexagonal**:
 ## 🚀 Tecnologias
 
 ### Core
-- **Java 21**
+- **Java 21** (Eclipse Temurin)
 - **Spring Boot 3.5.9**
 - **Spring Security** (HTTP Basic Auth)
 - **Spring Data JPA** + Hibernate
@@ -174,11 +176,38 @@ Resposta esperada:
 {
   "status": "UP",
   "components": {
+    "db": {
+      "status": "UP",
+      "details": {
+        "database": "MySQL",
+        "validationQuery": "isValid()"
+      }
+    },
+    "diskSpace": {
+      "status": "UP",
+      "details": {
+        "total": 983347249152,
+        "free": 849019969536,
+        "threshold": 10485760,
+        "path": "/app/.",
+        "exists": true
+      }
+    },
     "model": {
       "status": "UP",
       "details": {
         "status": "Modelo ONNX carregado com sucesso",
         "session": "Ativa"
+      }
+    },
+    "ping": {
+      "status": "UP"
+    },
+    "ssl": {
+      "status": "UP",
+      "details": {
+        "validChains": [],
+        "invalidChains": []
       }
     }
   }
@@ -208,24 +237,24 @@ Realiza uma predição e retorna apenas o resultado final.
 ```json
 {
   "gender": "Male",
-  "age": 28,
-  "country": "BR",
+  "age": 29,
+  "country": "Brazil",
   "subscriptionType": "Premium",
-  "listeningTime": 120.5,
-  "songsPlayedPerDay": 45,
-  "skipRate": 0.35,
+  "listeningTime": 540.0,
+  "songsPlayedPerDay": 12,
+  "skipRate": 0.15,
   "adsListenedPerWeek": 0,
   "deviceType": "Mobile",
   "offlineListening": true,
-  "userId": "user-123-abc"
+  "userId": "12345"
 }
 ```
 
 **Response:**
 ```json
 {
-  "label": "WILL_STAY",
-  "probability": 0.3245
+  "label": "WILL_CHURN",
+  "probability": 0.6087930798530579
 }
 ```
 
@@ -240,12 +269,12 @@ Retorna predição com probabilidades detalhadas de cada classe.
 **Response:**
 ```json
 {
-  "label": "WILL_STAY",
-  "probability": 0.3245,
-  "probabilities": [0.3245, 0.6755],
+  "label": "WILL_CHURN",
+  "probability": 0.6087930798530579,
+  "probabilities": [0.6087931],
   "classProbabilities": {
-    "WILL_CHURN": 0.3245,
-    "WILL_STAY": 0.6755
+    "WILL_CHURN": 0.6087931,
+    "WILL_STAY": 0.39120692
   }
 }
 ```
@@ -363,10 +392,15 @@ O container está configurado com:
 
 ### Health Check Customizado
 
-O endpoint `/actuator/health` verifica:
-- ✅ Status do banco de dados
-- ✅ Modelo ONNX carregado
-- ✅ Sessão ONNX ativa
+O endpoint `/actuator/health` verifica múltiplos componentes:
+
+✅ **Database (MySQL)** - Conectividade e validação do banco  
+✅ **Disk Space** - Espaço disponível no container  
+✅ **Model (ONNX)** - Modelo carregado e sessão ativa  
+✅ **Ping** - Verificação básica de disponibilidade  
+✅ **SSL** - Validação de certificados SSL/TLS
+
+Todos os componentes devem estar com `status: "UP"` para a aplicação estar saudável.
 
 ---
 
@@ -412,17 +446,17 @@ curl -X POST http://localhost:10808/predict \
   -u admin:sua_senha_aqui \
   -H "Content-Type: application/json" \
   -d '{
-    "gender": "Female",
-    "age": 32,
-    "country": "US",
-    "subscriptionType": "Free",
-    "listeningTime": 45.2,
-    "songsPlayedPerDay": 15,
-    "skipRate": 0.65,
-    "adsListenedPerWeek": 25,
-    "deviceType": "Desktop",
-    "offlineListening": false,
-    "userId": "test-user-456"
+    "gender": "Male",
+    "age": 29,
+    "country": "Brazil",
+    "subscriptionType": "Premium",
+    "listeningTime": 540.0,
+    "songsPlayedPerDay": 12,
+    "skipRate": 0.15,
+    "adsListenedPerWeek": 0,
+    "deviceType": "Mobile",
+    "offlineListening": true,
+    "userId": "12345"
   }'
 ```
 
@@ -462,7 +496,7 @@ docker-compose logs app
 
 ---
 
-## 👥 Equipe
+## 👥 Equipe DataBeats
 
 ### Time Back-End 💻
 - [**Ezandro Bueno**](https://github.com/ezbueno)
@@ -480,7 +514,7 @@ docker-compose logs app
 
 ## 📝 Licença
 
-Este projeto foi desenvolvido para o **Hackathon DataBeats 2026**.
+Este projeto foi desenvolvido para o **Hackathon ONE (Oracle Next Education)** pela **Equipe DataBeats**.
 
 ---
 
@@ -496,8 +530,8 @@ Este projeto foi desenvolvido para o **Hackathon DataBeats 2026**.
 
 ## 📧 Contato
 
-Para dúvidas ou sugestões, abra uma issue no repositório ou entre em contato com a equipe.
+Para dúvidas ou sugestões, abra uma issue no [repositório oficial](https://github.com/ezbueno/churninsight-api) ou entre em contato com a equipe.
 
 ---
 
-**Desenvolvido com ❤️ usando Spring Boot e ONNX Runtime | Hackathon ONE 2026 - Equipe DataBeats**
+**Desenvolvido com ❤️ pela Equipe DataBeats | Hackathon ONE (Oracle Next Education)**
