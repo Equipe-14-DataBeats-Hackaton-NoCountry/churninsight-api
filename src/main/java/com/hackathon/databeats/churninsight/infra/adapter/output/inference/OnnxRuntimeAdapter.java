@@ -1,9 +1,11 @@
 package com.hackathon.databeats.churninsight.infra.adapter.output.inference;
 
 import ai.onnxruntime.*;
+import com.hackathon.databeats.churninsight.application.port.output.LoadModelPort;
 import com.hackathon.databeats.churninsight.infra.exception.ModelInferenceException;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 import com.hackathon.databeats.churninsight.infra.util.ModelMetadata;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class OnnxRuntimeAdapter {
+@Component
+public class OnnxRuntimeAdapter implements LoadModelPort {
     private final OrtEnvironment env;
     private final OrtSession session;
     private final ModelMetadata metadata;
@@ -130,4 +133,20 @@ public class OnnxRuntimeAdapter {
     private float safeFloat(Integer value) { return value == null ? 0f : value.floatValue(); }
     private double safeDouble(Double value) { return value == null ? 0d : value; }
     private float safeInt(Integer value) { return value == null ? 0f : value.floatValue(); }
+
+    @Override
+    public double calculateProbability(CustomerProfile profile, boolean isHighRisk) {
+        try {
+            float[] probabilities = predict(profile);
+            // Assumindo que probabilities[1] é a probabilidade de churn
+            return probabilities.length > 1 ? probabilities[1] : probabilities[0];
+        } catch (OrtException e) {
+            throw new ModelInferenceException("Erro ao calcular probabilidade: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean isModelLoaded() {
+        return session != null;
+    }
 }
