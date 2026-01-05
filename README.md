@@ -507,7 +507,7 @@ docker-compose logs app
 ### Time Data Science 📊
 - [**André Ribeiro**](https://github.com/andrerochads)
 - [**Kelly Muehlmann**](https://github.com/kellymuehlmann)
-- **Luiz Alves**
+- [**Luiz Alves**](https://github.com/lf-all)
 - [**Mariana Fernandes**](https://github.com/mari-martins-fernandes)
 
 ---
