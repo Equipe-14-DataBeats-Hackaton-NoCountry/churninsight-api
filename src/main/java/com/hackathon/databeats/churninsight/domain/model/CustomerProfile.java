@@ -1,50 +1,92 @@
 package com.hackathon.databeats.churninsight.domain.model;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import java.util.Objects;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CustomerProfile {
-    @NotBlank(message = "Gender é obrigatório")
-    private String gender;
+/**
+ * Value Object de domínio puro.
+ * Representa o estado imutável de um perfil de cliente.
+ */
+public record CustomerProfile(
+        String gender,
+        Integer age,
+        String country,
+        String subscriptionType,
+        Double listeningTime,
+        Integer songsPlayedPerDay,
+        Double skipRate,
+        Integer adsListenedPerWeek,
+        String deviceType,
+        Boolean offlineListening,
+        String userId
+) {
 
-    @NotNull(message = "Age é obrigatório")
-    @Min(value = 10, message = "Idade mínima é 10 anos")
-    @Max(value = 120, message = "Idade máxima é 120 anos")
-    private Integer age;
+    /**
+     * Construtor Compacto (Canonical Constructor).
+     * Local ideal para validações de Regra de Negócio que devem ser
+     * respeitadas em qualquer lugar do sistema.
+     */
+    public CustomerProfile {
+        Objects.requireNonNull(userId, "UserId é obrigatório");
+        Objects.requireNonNull(gender, "Gender é obrigatório");
 
-    @NotBlank(message = "Country é obrigatório")
-    private String country;
+        if (age == null || age < 10 || age > 120) {
+            throw new IllegalArgumentException("Idade deve estar entre 10 e 120 anos");
+        }
 
-    @NotBlank(message = "SubscriptionType é obrigatório")
-    private String subscriptionType;
+        if (skipRate != null && (skipRate < 0.0 || skipRate > 1.0)) {
+            throw new IllegalArgumentException("SkipRate deve estar entre 0.0 e 1.0");
+        }
 
-    @NotNull(message = "ListeningTime é obrigatório")
-    @Positive(message = "ListeningTime deve ser positivo")
-    private Double listeningTime;
+        // Padronização de dados (Opcional, mas útil no domínio)
+        country = (country != null) ? country.toUpperCase() : null;
+    }
 
-    @NotNull(message = "SongsPlayedPerDay é obrigatório")
-    @Min(value = 0, message = "SongsPlayedPerDay não pode ser negativo")
-    private Integer songsPlayedPerDay;
+    /**
+     * Lógica de domínio: identifica se o cliente tem acesso a recursos premium.
+     */
+    public boolean isPremium() {
+        return "premium".equalsIgnoreCase(subscriptionType);
+    }
 
-    @NotNull(message = "SkipRate é obrigatório")
-    @DecimalMin(value = "0.0", inclusive = true, message = "SkipRate deve ser >= 0")
-    @DecimalMax(value = "1.0", inclusive = true, message = "SkipRate deve ser <= 1")
-    private Double skipRate;
+    /**
+     * Facilita a criação do objeto em Testes e Services de Aplicação.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
 
-    @NotNull(message = "AdsListenedPerWeek é obrigatório")
-    @Min(value = 0, message = "AdsListenedPerWeek não pode ser negativo")
-    private Integer adsListenedPerWeek;
+    // Builder estático manual para evitar dependência de bibliotecas externas no domínio
+    public static class Builder {
+        private String gender;
+        private Integer age;
+        private String country;
+        private String subscriptionType;
+        private Double listeningTime;
+        private Integer songsPlayedPerDay;
+        private Double skipRate;
+        private Integer adsListenedPerWeek;
+        private String deviceType;
+        private Boolean offlineListening;
+        private String userId;
 
-    @NotBlank(message = "DeviceType é obrigatório")
-    private String deviceType;
+        public Builder gender(String gender) { this.gender = gender; return this; }
+        public Builder age(Integer age) { this.age = age; return this; }
+        public Builder country(String country) { this.country = country; return this; }
+        public Builder subscriptionType(String subscriptionType) { this.subscriptionType = subscriptionType; return this; }
+        public Builder listeningTime(Double listeningTime) { this.listeningTime = listeningTime; return this; }
+        public Builder songsPlayedPerDay(Integer songsPlayedPerDay) { this.songsPlayedPerDay = songsPlayedPerDay; return this; }
+        public Builder skipRate(Double skipRate) { this.skipRate = skipRate; return this; }
+        public Builder adsListenedPerWeek(Integer adsListenedPerWeek) { this.adsListenedPerWeek = adsListenedPerWeek; return this; }
+        public Builder deviceType(String deviceType) { this.deviceType = deviceType; return this; }
+        public Builder offlineListening(Boolean offlineListening) { this.offlineListening = offlineListening; return this; }
+        public Builder userId(String userId) { this.userId = userId; return this; }
 
-    @NotNull(message = "OfflineListening é obrigatório")
-    private Boolean offlineListening;
-
-    @NotBlank(message = "UserId é obrigatório")
-    private String userId;
+        public CustomerProfile build() {
+            return new CustomerProfile(
+                    gender, age, country, subscriptionType, listeningTime,
+                    songsPlayedPerDay, skipRate, adsListenedPerWeek, deviceType,
+                    offlineListening, userId
+            );
+        }
+    }
 }
