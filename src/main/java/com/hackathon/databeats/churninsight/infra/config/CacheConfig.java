@@ -43,7 +43,8 @@ public class CacheConfig {
 
         cacheManager.setCacheNames(List.of(
                 "stats",
-                "predictions"
+                "predictions",
+                "predictionStats"
         ));
 
         return cacheManager;
