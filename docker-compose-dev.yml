@@ -1,0 +1,75 @@
+services:
+  # ============================================================================
+  # DATABASE (MySQL 8.0)
+  # ============================================================================
+  db:
+    image: mysql:8.0
+    container_name: churn-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: churn_db
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --performance-schema=OFF
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    networks:
+      - churn-dev-net
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # API BACKEND (Spring Boot) - Build Local
+  # ============================================================================
+  app:
+    build: .
+    container_name: churn-api
+    restart: on-failure
+    depends_on:
+        db:
+          condition: service_healthy
+    ports:
+      - "10808:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/churn_db?allowPublicKeyRetrieval=true&useSSL=false&rewriteBatchedStatements=true
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SERVER_PORT: 8080
+      APP_PORT: 8080
+      # Configuração para aceitar requisições do proxy e frontend local
+      CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://churn-frontend:3000"
+    networks:
+      - churn-dev-net
+
+  # ============================================================================
+  # FRONTEND (React + Nginx Proxy) - Build Local
+  # ============================================================================
+  frontend:
+    build: ./Frontend
+    container_name: churn-frontend
+    restart: on-failure
+    depends_on:
+      - app
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=/api
+    networks:
+      - churn-dev-net
+
+networks:
+  churn-dev-net:
+    driver: bridge
+
+volumes:
+  mysql_dev_data:
+
