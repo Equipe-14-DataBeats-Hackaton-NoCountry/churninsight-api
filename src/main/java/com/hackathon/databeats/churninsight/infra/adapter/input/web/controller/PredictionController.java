@@ -1,4 +1,4 @@
-package com.hackathon.databeats.churninsight.infra.adapter.input.web;
+package com.hackathon.databeats.churninsight.infra.adapter.input.web.controller;
 
 import com.hackathon.databeats.churninsight.application.dto.PredictionResult;
 import com.hackathon.databeats.churninsight.application.port.input.BatchProcessingUseCase;

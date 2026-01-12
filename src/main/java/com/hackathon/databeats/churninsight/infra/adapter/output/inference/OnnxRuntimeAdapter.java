@@ -1,23 +1,33 @@
 package com.hackathon.databeats.churninsight.infra.adapter.output.inference;
 
 import ai.onnxruntime.*;
-import com.hackathon.databeats.churninsight.application.port.output.LoadModelPort;
-import com.hackathon.databeats.churninsight.infra.exception.ModelInferenceException;
+import com.hackathon.databeats.churninsight.application.port.output.InferencePort;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
+import com.hackathon.databeats.churninsight.infra.exception.ModelInferenceException;
 import com.hackathon.databeats.churninsight.infra.util.ModelMetadata;
-import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-@Component
-public class OnnxRuntimeAdapter implements LoadModelPort {
+@Slf4j
+public class OnnxRuntimeAdapter implements InferencePort {
     private final OrtEnvironment env;
     private final OrtSession session;
     private final ModelMetadata metadata;
+
+    private static final List<String> PROBABILITY_OUTPUT_NAMES = List.of("output_probability", "probabilities", "probability");
+
+    /**
+     * CORREÇÃO APLICADA: O modelo foi treinado com classes invertidas.
+     * Classe 0 = CHURN (cancelamento), Classe 1 = STAY (permanência)
+     *
+     * Com INVERT_CLASSES = true, corrigimos a interpretação para:
+     * - probs[0] = probabilidade de WILL_STAY
+     * - probs[1] = probabilidade de WILL_CHURN
+     */
+    private static final boolean INVERT_CLASSES = true;
 
     public OnnxRuntimeAdapter(InputStream modelStream, ModelMetadata metadata) throws OrtException, IOException {
         this.env = OrtEnvironment.getEnvironment();
@@ -25,64 +35,169 @@ public class OnnxRuntimeAdapter implements LoadModelPort {
 
         byte[] modelBytes = modelStream.readAllBytes();
         OrtSession.SessionOptions options = new OrtSession.SessionOptions();
+
+        // OTIMIZAÇÃO: 1 thread por operação - evita competição quando usamos parallelStream
+        // O paralelismo é controlado pelo Java (ForkJoinPool), não pelo ONNX
+        options.setIntraOpNumThreads(1);
+        options.setInterOpNumThreads(1);
+
+        // Otimizações adicionais
+        options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
+
         this.session = env.createSession(modelBytes, options);
+
+        // Log de inicialização do modelo
+        log.info("✅ Modelo ONNX carregado com sucesso. INVERT_CLASSES={}", INVERT_CLASSES);
+        if (log.isDebugEnabled()) {
+            log.debug("Inputs esperados pelo modelo:");
+            session.getInputInfo().forEach((name, info) ->
+                log.debug(" - {}: {}", name, info.getInfo().toString()));
+        }
     }
 
-    public float[] predict(CustomerProfile profile) throws OrtException {
-        Map<String, OnnxTensor> inputs = new HashMap<>();
+    /**
+     * Versão Otimizada: Recebe as features calculadas para evitar overhead e inconsistência
+     * OTIMIZAÇÃO: Minimiza alocações de objetos para melhor performance em batch
+     */
+    @Override
+    public float[] predict(CustomerProfile profile, Map<String, Object> engineeredFeatures) {
+        // Usa array local para inputs (mais eficiente que HashMap em hot path)
+        OnnxTensor[] tensors = new OnnxTensor[16]; // máximo de inputs esperados
+        Map<String, OnnxTensor> inputs = new HashMap<>(16);
+        int tensorIndex = 0;
 
-        for (String feature : this.metadata.getNumericFeatures()) {
-            float value = switch (feature) {
-                case "age" -> safeFloat(profile.getAge());
-                case "listening_time" -> (float) safeDouble(profile.getListeningTime());
-                case "songs_played_per_day" -> safeInt(profile.getSongsPlayedPerDay());
-                case "skip_rate" -> (float) safeDouble(profile.getSkipRate());
-                case "ads_listened_per_week" -> safeInt(profile.getAdsListenedPerWeek());
-                default -> 0f;
-            };
-            inputs.put(feature, OnnxTensor.createTensor(env, new float[][]{{value}}));
-        }
+        try {
+            // 1. Inputs Numéricos Originais - inline para evitar criação de Map intermediário
+            tensors[tensorIndex] = OnnxTensor.createTensor(env, new float[][]{{safeFloat(profile.age())}});
+            inputs.put("age", tensors[tensorIndex++]);
 
-        for (String feature : this.metadata.getCategoricalFeatures()) {
-            String value = switch (feature) {
-                case "gender" -> profile.getGender();
-                case "country" -> profile.getCountry();
-                case "subscription_type" -> profile.getSubscriptionType();
-                case "device_type" -> profile.getDeviceType();
-                default -> "";
-            };
-            inputs.put(feature, OnnxTensor.createTensor(env, new String[][]{{value}}));
-        }
+            tensors[tensorIndex] = OnnxTensor.createTensor(env, new float[][]{{(float) safeDouble(profile.listeningTime())}});
+            inputs.put("listening_time", tensors[tensorIndex++]);
 
-        try (OrtSession.Result result = session.run(inputs)) {
-            OnnxValue probOutput = result.get("output_probability")
-                    .orElseThrow(() -> new ModelInferenceException("Saída 'output_probability' não encontrada"));
-            Object probValue = probOutput.getValue();
+            tensors[tensorIndex] = OnnxTensor.createTensor(env, new float[][]{{safeInt(profile.songsPlayedPerDay())}});
+            inputs.put("songs_played_per_day", tensors[tensorIndex++]);
 
-            return switch (probValue) {
-                case float[] floatArray -> floatArray;
-                case float[][] floatArrayArray -> floatArrayArray[0];
-                case List<?> list -> listToFloatArray(list);
-                case OnnxMap onnxMap -> {
-                    Object rawMap = onnxMap.getValue();
-                    if (rawMap instanceof Map<?, ?> map) {
-                        yield mapToFloatArray(map);
-                    }
-                    throw new ModelInferenceException("OnnxMap retornou tipo inesperado: " + "null");
+            tensors[tensorIndex] = OnnxTensor.createTensor(env, new float[][]{{(float) safeDouble(profile.skipRate())}});
+            inputs.put("skip_rate", tensors[tensorIndex++]);
+
+            tensors[tensorIndex] = OnnxTensor.createTensor(env, new float[][]{{safeInt(profile.adsListenedPerWeek())}});
+            inputs.put("ads_listened_per_week", tensors[tensorIndex++]);
+
+            tensors[tensorIndex] = OnnxTensor.createTensor(env, new float[][]{{(profile.offlineListening() != null && profile.offlineListening()) ? 1.0f : 0.0f}});
+            inputs.put("offline_listening", tensors[tensorIndex++]);
+
+            // 2. Inputs Numéricos Calculados (engineered features)
+            for (Map.Entry<String, Object> entry : engineeredFeatures.entrySet()) {
+                float val = 0f;
+                Object value = entry.getValue();
+                if (value instanceof Boolean b) {
+                    val = b ? 1.0f : 0.0f;
+                } else if (value instanceof Number n) {
+                    val = n.floatValue();
                 }
-                case OnnxSequence seq -> {
-                    Object rawList = seq.getValue();
-                    if (rawList instanceof List<?> list) {
-                        yield listToFloatArray(list);
-                    }
-                    throw new ModelInferenceException("OnnxSequence retornou tipo inesperado: " + "null");
-                }
-                default -> throw new ModelInferenceException("Formato inesperado: " + probValue.getClass().getName());
-            };
+                tensors[tensorIndex] = OnnxTensor.createTensor(env, new float[][]{{val}});
+                inputs.put(entry.getKey(), tensors[tensorIndex++]);
+            }
+
+            // 3. Inputs Categóricos
+            for (String feature : this.metadata.getCategoricalFeatures()) {
+                String rawValue = switch (feature) {
+                    case "gender" -> profile.gender();
+                    case "country" -> profile.country();
+                    case "subscription_type" -> profile.subscriptionType();
+                    case "device_type" -> profile.deviceType();
+                    default -> "";
+                };
+                String treatedValue = normalizeCategoricalValue(feature, rawValue);
+                tensors[tensorIndex] = OnnxTensor.createTensor(env, new String[][]{{treatedValue}});
+                inputs.put(feature, tensors[tensorIndex++]);
+            }
+
+            // 4. Inferência
+            try (OrtSession.Result result = session.run(inputs)) {
+                String outputName = findProbabilityOutputName(session.getOutputNames());
+                OnnxValue probOutput = result.get(outputName)
+                        .orElseThrow(() -> new ModelInferenceException("Output '" + outputName + "' não encontrado"));
+                return extractProbabilities(probOutput);
+            }
+
+        } catch (OrtException e) {
+            throw new ModelInferenceException("Erro na inferência ONNX: " + e.getMessage(), e);
+        } finally {
+            // Limpeza de memória nativa - usa array para evitar iterator
+            for (int i = 0; i < tensorIndex; i++) {
+                if (tensors[i] != null) tensors[i].close();
+            }
         }
+    }
+
+    // Sobrecarga para manter compatibilidade com predições unitárias simples se necessário
+    public float[] predict(CustomerProfile profile) {
+        return predict(profile, new HashMap<>());
+    }
+
+    private String findProbabilityOutputName(Set<String> outputNames) {
+        for (String name : PROBABILITY_OUTPUT_NAMES) {
+            if (outputNames.contains(name)) {
+                return name;
+            }
+        }
+        if (outputNames.size() > 1) {
+            Iterator<String> it = outputNames.iterator();
+            it.next(); // skip first
+            return it.next(); // return second
+        }
+        return outputNames.iterator().next();
+    }
+
+    private float[] extractProbabilities(OnnxValue probOutput) throws OrtException {
+        Object probValue = probOutput.getValue();
+
+        float[] result = switch (probValue) {
+            case long[] longArray -> {
+                float val = (float) longArray[0];
+                yield new float[]{1 - val, val};
+            }
+            case float[] floatArray -> floatArray;
+            case float[][] floatArrayArray -> floatArrayArray[0];
+            case List<?> list -> listToFloatArray(list);
+            case OnnxMap onnxMap -> {
+                if (onnxMap.getValue() instanceof Map<?, ?> map) yield mapToFloatArray(map);
+                throw new ModelInferenceException("Tipo de mapa inesperado.");
+            }
+            case OnnxSequence seq -> {
+                if (seq.getValue() instanceof List<?> list) yield listToFloatArray(list);
+                throw new ModelInferenceException("Tipo de sequência inesperada.");
+            }
+            default -> throw new ModelInferenceException("Formato inesperado: " + probValue.getClass().getName());
+        };
+
+        if (result.length == 1) {
+            float pChurn = result[0];
+            return new float[]{1.0f - pChurn, pChurn};
+        }
+
+        return result;
     }
 
     private float[] listToFloatArray(List<?> list) throws OrtException {
+        if (!list.isEmpty()) {
+            Object firstElement = list.getFirst();
+
+            // Verifica se é um OnnxMap (estrutura comum para probabilidades em sklearn-onnx)
+            if (firstElement instanceof OnnxMap onnxMap) {
+                Object mapValue = onnxMap.getValue();
+                if (mapValue instanceof Map<?, ?> map) {
+                    return mapToFloatArray(map);
+                }
+            }
+
+            // Fallback para Map Java padrão
+            if (firstElement instanceof Map) {
+                return mapToFloatArray((Map<?, ?>) firstElement);
+            }
+        }
+
         float[] arr = new float[list.size()];
         for (int i = 0; i < list.size(); i++) {
             arr[i] = toFloat(list.get(i));
@@ -90,44 +205,106 @@ public class OnnxRuntimeAdapter implements LoadModelPort {
         return arr;
     }
 
-    private float[] mapToFloatArray(Map<?, ?> map) throws OrtException {
-        float[] arr = new float[map.size()];
-        int i = 0;
-        for (Map.Entry<?, ?> e : map.entrySet()) {
-            arr[i++] = toFloat(e.getValue());
+    private float[] mapToFloatArray(Map<?, ?> map) {
+        float p0 = 0f, p1 = 0f;
+
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            Object key = entry.getKey();
+            Object val = entry.getValue();
+            if (isIndexZero(key)) {
+                p0 = toFloat(val);
+            } else if (isIndexOne(key)) {
+                p1 = toFloat(val);
+            }
         }
-        return arr;
+
+        // Aplica inversão se o modelo foi treinado com classes invertidas
+        if (INVERT_CLASSES) {
+            // Modelo invertido: p0=CHURN, p1=STAY → retorna [p1, p0] para [STAY, CHURN]
+            return new float[]{p1, p0};
+        } else {
+            // Convenção padrão sklearn: p0=STAY, p1=CHURN
+            return new float[]{p0, p1};
+        }
     }
 
-    private float toFloat(Object val) throws OrtException {
-        if (val == null) {
-            throw new ModelInferenceException("Valor inesperado: null");
+    private boolean isIndexZero(Object key) {
+        if (key instanceof Number n) return n.intValue() == 0;
+        if (key instanceof String s) return s.equals("0") || s.equalsIgnoreCase("WILL_STAY");
+        return false;
+    }
+
+    private boolean isIndexOne(Object key) {
+        if (key instanceof Number n) return n.intValue() == 1;
+        if (key instanceof String s) return s.equals("1") || s.equalsIgnoreCase("WILL_CHURN");
+        return false;
+    }
+
+    private float toFloat(Object val) {
+        if (val == null) return 0f;
+        if (val instanceof Number n) return n.floatValue();
+        return 0f;
+    }
+
+    /**
+     * Normaliza valores categóricos para o formato esperado pelo modelo treinado.
+     * O modelo foi treinado com valores específicos (ex: "Male", "Free", "DE", "Desktop").
+     */
+    private String normalizeCategoricalValue(String feature, String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return "";
         }
 
-        return switch (val) {
-            case Number num -> num.floatValue();
-            case Map<?, ?> map -> {
-                if (!map.isEmpty()) {
-                    Object firstVal = map.values().iterator().next();
-                    yield toFloat(firstVal);
-                }
-                throw new ModelInferenceException("Mapa vazio retornado pelo modelo.");
-            }
-            case OnnxValue ov -> toFloat(ov.getValue());
-            case List<?> list -> {
-                if (!list.isEmpty()) {
-                    yield toFloat(list.getFirst());
-                }
-                throw new ModelInferenceException("Lista vazia retornada pelo modelo.");
-            }
-            case float[] fa -> {
-                if (fa.length > 0) {
-                    yield fa[0];
-                }
-                throw new ModelInferenceException("Array vazio retornado pelo modelo.");
-            }
-            default -> throw new ModelInferenceException("Valor inesperado: " + val.getClass().getName());
+        String value = rawValue.trim().toLowerCase();
+
+        return switch (feature) {
+            case "gender" -> switch (value) {
+                case "male", "m", "masculino" -> "Male";
+                case "female", "f", "feminino" -> "Female";
+                case "other", "outro", "outros" -> "Other";
+                default -> capitalizeFirst(rawValue);
+            };
+            case "country" -> normalizeCountry(value);
+            case "subscription_type" -> switch (value) {
+                case "free", "gratis", "gratuito" -> "Free";
+                case "premium", "pago" -> "Premium";
+                case "family", "familia", "familiar" -> "Family";
+                case "student", "estudante", "universitario" -> "Student";
+                default -> capitalizeFirst(rawValue);
+            };
+            case "device_type" -> switch (value) {
+                case "desktop", "computer", "pc", "computador" -> "Desktop";
+                case "mobile", "celular", "smartphone", "phone" -> "Mobile";
+                case "web", "browser", "navegador" -> "Web";
+                default -> capitalizeFirst(rawValue);
+            };
+            default -> rawValue.trim();
         };
+    }
+
+    /**
+     * Normaliza nomes de países para códigos ISO de 2 letras (formato do modelo)
+     */
+    private String normalizeCountry(String value) {
+        return switch (value) {
+            case "germany", "de", "alemanha", "deutschland" -> "DE";
+            case "usa", "us", "united states", "estados unidos", "eua" -> "US";
+            case "brazil", "br", "brasil" -> "BR";
+            case "canada", "ca", "canadá" -> "CA";
+            case "uk", "gb", "united kingdom", "reino unido", "england", "inglaterra" -> "GB";
+            case "france", "fr", "frança" -> "FR";
+            case "spain", "es", "espanha", "españa" -> "ES";
+            case "italy", "it", "italia", "itália" -> "IT";
+            case "portugal", "pt" -> "PT";
+            case "mexico", "mx", "méxico" -> "MX";
+            case "argentina", "ar" -> "AR";
+            default -> value.toUpperCase(); // Assume que é um código ISO
+        };
+    }
+
+    private String capitalizeFirst(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
     }
 
     private float safeFloat(Integer value) { return value == null ? 0f : value.floatValue(); }
@@ -135,7 +312,5 @@ public class OnnxRuntimeAdapter implements LoadModelPort {
     private float safeInt(Integer value) { return value == null ? 0f : value.floatValue(); }
 
     @Override
-    public boolean isModelLoaded() {
-        return session != null;
-    }
+    public boolean isModelLoaded() { return session != null; }
 }
