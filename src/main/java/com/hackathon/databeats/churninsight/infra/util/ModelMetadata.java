@@ -1,37 +1,83 @@
 package com.hackathon.databeats.churninsight.infra.util;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hackathon.databeats.churninsight.application.port.output.ModelMetadataPort;
 import lombok.Data;
 
 import java.util.List;
 
+/**
+ * Implementação dos metadados do modelo de ML carregados do arquivo JSON.
+ *
+ * <p>Contém as métricas de performance, configurações de features e
+ * parâmetros do modelo ONNX exportado pelo time de Data Science.</p>
+ *
+ * @author Equipe ChurnInsight
+ * @version 1.0.0
+ */
 @Data
-public class ModelMetadata {
+public class ModelMetadata implements ModelMetadataPort {
+
+    /** Nome identificador do modelo. */
     private String name;
+
+    /** Versão do modelo no formato semântico. */
     private String version;
+
+    /** Acurácia do modelo (0.0 a 1.0). */
     private double accuracy;
 
+    /** F1-Score do modelo (0.0 a 1.0). */
     @JsonProperty(value = "f1_score")
     private double f1Score;
 
+    /** Lista de features numéricas esperadas pelo modelo. */
     @JsonProperty(value = "numeric_features")
     private List<String> numericFeatures;
 
+    /** Lista de features categóricas esperadas pelo modelo. */
     @JsonProperty(value = "categorical_features")
     private List<String> categoricalFeatures;
 
+    /** Tipo do algoritmo utilizado (ex: Logistic Regression with SMOTE). */
     @JsonProperty(value = "model_type")
     private String modelType;
 
+    /** Precisão do modelo (0.0 a 1.0). */
     private double precision;
+
+    /** Recall do modelo (0.0 a 1.0). */
     private double recall;
 
+    /** Área sob a curva ROC (0.0 a 1.0). */
     @JsonProperty(value = "auc_roc")
     private double aucRoc;
 
+    /** Threshold ótimo de classificação calculado durante o treino. */
     @JsonProperty(value = "threshold_otimo")
     private double thresholdOtimo;
 
+    /** Data de exportação do modelo. */
     @JsonProperty(value = "export_date")
     private String exportDate;
+
+    @Override
+    public String getNomeModelo() {
+        return this.name;
+    }
+
+    @Override
+    public String getVersaoModelo() {
+        return this.version;
+    }
+
+    @Override
+    public double getAcuracia() {
+        return this.accuracy;
+    }
+
+    @Override
+    public double getPrecisao() {
+        return this.precision;
+    }
 }

@@ -1,22 +1,26 @@
 package com.hackathon.databeats.churninsight.infra.config;
 
-import com.hackathon.databeats.churninsight.application.port.output.LoadModelPort;
+import com.hackathon.databeats.churninsight.application.port.output.InferencePort;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
+/**
+ * Health Indicator para monitorar o status do modelo de ML.
+ * Usa InferencePort para verificar se o modelo está carregado.
+ */
 @Component("model")
 public class ModelHealthIndicator implements HealthIndicator {
-    private final LoadModelPort loadModelPort;
+    private final InferencePort inferencePort;
 
-    public ModelHealthIndicator(LoadModelPort loadModelPort) {
-        this.loadModelPort = loadModelPort;
+    public ModelHealthIndicator(InferencePort inferencePort) {
+        this.inferencePort = inferencePort;
     }
 
     @Override
     public Health health() {
         try {
-            boolean isLoaded = loadModelPort.isModelLoaded();
+            boolean isLoaded = inferencePort.isModelLoaded();
 
             if (isLoaded) {
                 return Health.up()
