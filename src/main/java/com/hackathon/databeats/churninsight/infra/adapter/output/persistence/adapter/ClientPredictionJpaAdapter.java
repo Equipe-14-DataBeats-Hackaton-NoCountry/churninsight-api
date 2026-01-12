@@ -1,4 +1,4 @@
-package com.hackathon.databeats.churninsight.infra.adapter.output.persistence;
+package com.hackathon.databeats.churninsight.infra.adapter.output.persistence.adapter;
 
 import com.hackathon.databeats.churninsight.application.dto.ClientPrediction;
 import com.hackathon.databeats.churninsight.application.port.input.ClientPredictionQueryUseCase.ClientStatistics;

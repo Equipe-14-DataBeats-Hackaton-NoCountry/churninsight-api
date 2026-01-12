@@ -1,4 +1,4 @@
-package com.hackathon.databeats.churninsight.infra.adapter.input.web;
+package com.hackathon.databeats.churninsight.infra.adapter.input.web.controller;
 
 import com.hackathon.databeats.churninsight.application.dto.ClientPrediction;
 import com.hackathon.databeats.churninsight.application.dto.PaginatedResponse;
@@ -220,5 +220,11 @@ public class ClientQueryController {
         PredictionSearchFilter filter = PredictionSearchFilter.builder().churnStatus(status).build();
         PaginatedResponse<PredictionHistoryResponse> response = historyService.search(filter, page, size, "createdAt", "desc");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/aggregates")
+    @Operation(summary = "Aggregates para dashboard", description = "Retorna métricas pre-agrupadas para alimentar o dashboard")
+    public ResponseEntity<Map<String, Object>> getAggregates() {
+        return ResponseEntity.ok(historyService.getAggregates());
     }
 }

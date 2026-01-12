@@ -1,4 +1,4 @@
-package com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository;
+package com.hackathon.databeats.churninsight.infra.adapter.output.persistence.entity;
 
 import com.hackathon.databeats.churninsight.domain.enums.ChurnStatus;
 import jakarta.persistence.*;
