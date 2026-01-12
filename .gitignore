@@ -39,3 +39,6 @@ application-*.properties
 
 #Configuração e ambiente
 *.env
+
+# Diretório com segredos locais (não versionar)
+/secrets/

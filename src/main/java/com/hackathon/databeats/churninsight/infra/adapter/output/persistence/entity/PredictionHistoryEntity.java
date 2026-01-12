@@ -3,12 +3,14 @@ package com.hackathon.databeats.churninsight.infra.adapter.output.persistence.re
 import com.hackathon.databeats.churninsight.domain.enums.ChurnStatus;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.data.domain.Persistable;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "churn_history")
 @Data
-public class PredictionHistoryEntity {
+public class PredictionHistoryEntity implements Persistable<String> {
     @Id
     @Column(columnDefinition = "CHAR(36)", nullable = false)
     private String id;
@@ -63,4 +65,33 @@ public class PredictionHistoryEntity {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Transient
+    private boolean isNew = true;
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        this.isNew = false;
+    }
+
+    @Column(name = "frustration_index")
+    private Double frustrationIndex;
+
+    @Column(name = "ad_intensity")
+    private Double adIntensity;
+
+    @Column(name = "songs_per_minute")
+    private Double songsPerMinute;
+
+    @Column(name = "is_heavy_user")
+    private Boolean isHeavyUser;
+
+    @Column(name = "premium_no_offline")
+    private Boolean premiumNoOffline;
 }
