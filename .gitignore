@@ -42,3 +42,6 @@ application-*.properties
 
 # Diretório com segredos locais (não versionar)
 /secrets/
+
+# Docker Compose local (cada dev tem o seu)
+docker-compose-local*
