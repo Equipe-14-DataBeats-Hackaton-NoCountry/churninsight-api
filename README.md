@@ -751,13 +751,14 @@ src/main/java/com/hackathon/databeats/churninsight/
 │   ├── adapter/
 │   │   ├── input/
 │   │   │   └── web/
-│   │   │       ├── PredictionController.java
-│   │   │       ├── DashboardController.java
-│   │   │       ├── ClientQueryController.java
-│   │   │       ├── ApiContractController.java
+│   │   │       ├── controller/
+│   │   │       │   ├── PredictionController.java
+│   │   │       │   ├── DashboardController.java
+│   │   │       │   ├── ClientQueryController.java
+│   │   │       │   └── ApiContractController.java
 │   │   │       └── dto/
 │   │   │           ├── CustomerProfileRequest.java
-│   │   │           └── PredictionStatsResponse.java
+│   │   │           ├── PredictionStatsResponse.java
 │   │   │           └── DashboardMetricsResponse.java
 │   │   └── output/
 │   │       ├── inference/
