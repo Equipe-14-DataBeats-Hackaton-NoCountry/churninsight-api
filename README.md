@@ -257,17 +257,17 @@ Processamento Completo
 
 ```
 ┌─────────────────────────────────────┐
-│      REST Controller (Input)         │
+│      REST Controller (Input)        │
 └──────────────┬──────────────────────┘
                │
                ▼
 ┌─────────────────────────────────────┐
-│   Use Case Interface (Application)   │
+│   Use Case Interface (Application)  │
 └──────────────┬──────────────────────┘
                │
                ▼
 ┌─────────────────────────────────────┐
-│  Domain Model & Business Rules       │
+│  Domain Model & Business Rules      │
 └──────────────┬──────────────────────┘
                │
        ┌───────┴────────┐
@@ -502,6 +502,21 @@ Processa múltiplos perfis de clientes de forma assíncrona. Suporta até 1 milh
 }
 ```
 
+### 4. Métricas do Dashboard
+
+**GET** `/dashboard/metrics`
+
+**Response:**
+```json
+{
+    "total_customers": 10000,
+    "global_churn_rate": 97.5,
+    "customers_at_risk": 9750,
+    "revenue_at_risk": 150824.0,
+    "model_accuracy": 0.5094
+}
+```
+
 **Monitorar Progresso:**
 
 **GET** `/predict/batch/status/{jobId}`
@@ -523,7 +538,7 @@ Processa múltiplos perfis de clientes de forma assíncrona. Suporta até 1 milh
 
 Possíveis status: `QUEUED`, `PROCESSING`, `COMPLETED`, `FAILED`, `CANCELLED`
 
-### 4. Histórico de Predições
+### 5. Histórico de Predições
 
 **GET** `/clients`
 
@@ -571,7 +586,7 @@ GET /clients?page=0&size=10&sortBy=createdAt&churnStatus=WILL_CHURN&startDate=20
 - `country`: Filtrar por país
 - `gender`: Filtrar por gênero
 
-### 5. Predições Pré-Calculadas de Clientes
+### 6. Predições Pré-Calculadas de Clientes
 
 **GET** `/clients/predictions`
 
@@ -618,7 +633,7 @@ Estatísticas agregadas das predições pré-calculadas.
 }
 ```
 
-### 6. Contrato da API
+### 7. Contrato da API
 
 **GET** `/api/contract`
 
@@ -642,7 +657,7 @@ Retorna o contrato (schema) da API com detalhes de todas as features esperadas.
 }
 ```
 
-### 7. Métricas e Observabilidade
+### 8. Métricas e Observabilidade
 
 **GET** `/actuator/metrics`
 
@@ -712,8 +727,10 @@ src/main/java/com/hackathon/databeats/churninsight/
 │   │       ├── BatchSavePort.java
 │   │       └── ModelMetadataPort.java
 │   └── service/                       # Implementação dos Use Cases
+│       ├── ApiContractQueryService.java
 │       ├── ChurnPredictionService.java
 │       ├── BatchProcessingService.java
+│       ├── DashboardMetricsService.java
 │       ├── PredictionHistoryService.java
 │       └── ClientPredictionQueryService.java
 ├── domain/
@@ -735,12 +752,13 @@ src/main/java/com/hackathon/databeats/churninsight/
 │   │   ├── input/
 │   │   │   └── web/
 │   │   │       ├── PredictionController.java
-│   │   │       ├── ClientHistoryController.java
-│   │   │       ├── ClientPredictionController.java
+│   │   │       ├── DashboardController.java
+│   │   │       ├── ClientQueryController.java
 │   │   │       ├── ApiContractController.java
 │   │   │       └── dto/
 │   │   │           ├── CustomerProfileRequest.java
 │   │   │           └── PredictionStatsResponse.java
+│   │   │           └── DashboardMetricsResponse.java
 │   │   └── output/
 │   │       ├── inference/
 │   │       │   └── OnnxRuntimeAdapter.java
