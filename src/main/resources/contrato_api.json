@@ -23,13 +23,13 @@
         "premium_no_offline": 0
     },
     "expected_response": {
-        "prediction": "Vai Cancelar",
-        "probability": 0.5396,
-        "decision_threshold": 0.431019,
+        "prediction": "Não Vai Cancelar",
+        "probability": 0.2536,
+        "decision_threshold": 0.259808,
         "ai_diagnosis": {
             "primary_risk_factor": "Anúncios por Semana",
             "primary_retention_factor": "Uso Offline",
-            "suggested_action": "Priorizar oferta de retenção"
+            "suggested_action": "Manter fluxo padrão"
         }
     }
 }
