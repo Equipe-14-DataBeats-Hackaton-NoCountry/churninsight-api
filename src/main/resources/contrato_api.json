@@ -24,8 +24,8 @@
     },
     "expected_response": {
         "prediction": "Não Vai Cancelar",
-        "probability": 0.2536,
-        "decision_threshold": 0.259808,
+        "probability": 0.2556,
+        "decision_threshold": 0.262755,
         "ai_diagnosis": {
             "primary_risk_factor": "Anúncios por Semana",
             "primary_retention_factor": "Uso Offline",
