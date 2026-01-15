@@ -92,4 +92,19 @@ public interface PredictionHistoryRepository extends
             "SUM(CASE WHEN p.listeningTime < 100 THEN 1 ELSE 0 END) " +
             "FROM PredictionHistoryEntity p")
     Object[] getRiskFactorCounts();
+
+    /**
+     * Conta quantos clientes ficam no TOP 25% (probability >= cutoff_top25).
+     */
+    @Query(value = """
+    SELECT COUNT(*)
+    FROM (
+      SELECT id,
+             ROW_NUMBER() OVER (ORDER BY probability DESC) as row_num,
+             COUNT(*) OVER () as total_count
+      FROM churn_history
+    ) ranked
+    WHERE row_num <= CEIL(total_count * 0.25)
+    """, nativeQuery = true)
+    Long countTop25AtRisk();
 }
