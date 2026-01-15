@@ -30,6 +30,4 @@ public record PredictionResult(
 
         /** Mapa de probabilidades por nome da classe. */
         Map<String, Float> classProbabilities
-) {
-
-}
+) {}
