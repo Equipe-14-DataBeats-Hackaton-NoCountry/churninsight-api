@@ -161,7 +161,8 @@ public class BatchProcessingService implements BatchProcessingUseCase {
                                 if (totalRead.incrementAndGet() > maxRecords) {
                                     throw new RuntimeException("Limite de registros excedido. Máximo permitido: " + maxRecords);
                                 }
-                                if (context.currentLine() <= 2) validateCsvHeaders(context);
+                                if (context.currentLine() <= 2)
+                                    validateCsvHeaders(context);
                                 profileBuffer.add(parseRowToProfile(row, context.headers()));
 
                                 if (profileBuffer.size() >= batchSize) {
@@ -170,7 +171,8 @@ public class BatchProcessingService implements BatchProcessingUseCase {
                                     profileBuffer.clear();
                                 }
                             } catch (Exception e) {
-                                if (errors.size() < 50) errors.add("Linha " + context.currentLine() + ": " + e.getMessage());
+                                if (errors.size() < 50)
+                                    errors.add("Linha " + context.currentLine() + ": " + e.getMessage());
                             }
                         }
                     });
@@ -200,7 +202,8 @@ public class BatchProcessingService implements BatchProcessingUseCase {
                                     profileBuffer.clear();
                                 }
                             } catch (Exception e) {
-                                if (errors.size() < 50) errors.add("Linha Excel " + (row.getRowNum() + 1) + ": " + e.getMessage());
+                                if (errors.size() < 50)
+                                    errors.add("Linha Excel " + (row.getRowNum() + 1) + ": " + e.getMessage());
                             }
                         }
                     }
@@ -241,9 +244,9 @@ public class BatchProcessingService implements BatchProcessingUseCase {
                     processingPermits.release();
                 }
             }, taskExecutor).thenAccept(count -> {
-                 successCount.addAndGet(count);
-                 processedCount.addAndGet(batch.size());
-                 updateProcessedRecords(jobId, processedCount.get());
+                successCount.addAndGet(count);
+                processedCount.addAndGet(batch.size());
+                updateProcessedRecords(jobId, processedCount.get());
             });
 
             futures.add(future);
@@ -270,10 +273,10 @@ public class BatchProcessingService implements BatchProcessingUseCase {
         try {
             // Usa ForkJoinPool dedicado para inferência (não compete com outras tarefas)
             List<PredictionHistoryEntity> entities = inferencePool.submit(() ->
-                profiles.parallelStream()
-                    .map(p -> createEntityFromProfile(p, threshold, timestampMillis, batchTimestamp, requestIp))
-                    .filter(Objects::nonNull)
-                    .toList()
+                    profiles.parallelStream()
+                            .map(p -> createEntityFromProfile(p, threshold, timestampMillis, batchTimestamp, requestIp))
+                            .filter(Objects::nonNull)
+                            .toList()
             ).get();
 
             if (!entities.isEmpty()) {
@@ -301,6 +304,13 @@ public class BatchProcessingService implements BatchProcessingUseCase {
 
             // 2. Inferência
             float[] prediction = inferencePort.predict(p, features);
+
+            // DEBUG (
+            if (Math.random() < 0.001) {
+                log.info("DEBUG probs userId={} p0={} p1={} threshold={}",
+                        p.userId(), prediction[0], prediction[1], threshold);
+            }
+
             double prob = prediction[1];
             ChurnStatus status = prob >= threshold ? ChurnStatus.WILL_CHURN : ChurnStatus.WILL_STAY;
 
@@ -331,41 +341,96 @@ public class BatchProcessingService implements BatchProcessingUseCase {
 
             return e;
         } catch (Exception ex) {
+            log.warn("Falha ao processar userId={} motivo={}", p.userId(), ex.getMessage());
             return null;
         }
     }
 
     // --- MÉTODOS AUXILIARES ---
 
-    private void validateCsvHeaders(ParsingContext context) { validateHeadersGeneric(context.headers(), "CSV"); }
-    private void validateExcelHeaders(String[] headers) { validateHeadersGeneric(headers, "Excel"); }
+    private void validateCsvHeaders(ParsingContext context) {
+        validateHeadersGeneric(context.headers(), "CSV");
+    }
+
+    private void validateExcelHeaders(String[] headers) {
+        validateHeadersGeneric(headers, "Excel");
+    }
 
     private void validateHeadersGeneric(String[] headers, String type) {
         List<String> req = Arrays.asList("user_id", "gender", "age", "country", "subscription_type", "listening_time", "songs_played_per_day", "skip_rate", "ads_listened_per_week", "device_type", "offline_listening");
         Set<String> fileHeaders = Arrays.stream(headers).map(h -> h.toLowerCase().trim().replace(" ", "_")).collect(Collectors.toSet());
         List<String> missing = req.stream().filter(r -> !fileHeaders.contains(r)).toList();
-        if (!missing.isEmpty()) throw new IllegalArgumentException("Colunas faltando no " + type + ": " + String.join(", ", missing));
+        if (!missing.isEmpty())
+            throw new IllegalArgumentException("Colunas faltando no " + type + ": " + String.join(", ", missing));
     }
 
     private CustomerProfile mapToProfile(Map<String, String> data) {
         return CustomerProfile.builder()
                 .userId(data.getOrDefault("user_id", data.getOrDefault("userid", "")))
-                .gender(data.getOrDefault("gender", ""))
+                .gender(normalizeGender(data.getOrDefault("gender", "")))
                 .age(parseInt(data.get("age")))
-                .country(data.getOrDefault("country", ""))
-                .subscriptionType(data.getOrDefault("subscription_type", data.getOrDefault("subscriptiontype", "")))
+                .country(normalizeCountry(data.getOrDefault("country", "")))
+                .subscriptionType(normalizeSubscription(data.getOrDefault("subscription_type", data.getOrDefault("subscriptiontype", ""))))
                 .listeningTime(parseDouble(data.getOrDefault("listening_time", data.get("listeningtime"))))
                 .songsPlayedPerDay(parseInt(data.getOrDefault("songs_played_per_day", data.get("songsplayedperday"))))
                 .skipRate(parseDouble(data.getOrDefault("skip_rate", data.get("skiprate"))))
                 .adsListenedPerWeek(parseInt(data.getOrDefault("ads_listened_per_week", data.get("adslistenedperweek"))))
-                .deviceType(data.getOrDefault("device_type", data.getOrDefault("devicetype", "")))
+                .deviceType(normalizeDevice(data.getOrDefault("device_type", data.getOrDefault("devicetype", ""))))
                 .offlineListening(parseBoolean(data.getOrDefault("offline_listening", data.get("offlinelistening"))))
                 .build();
     }
 
+    private String normalizeGender(String v) {
+        if (v == null) return "";
+        v = v.trim().toLowerCase();
+        if (v.equals("male") || v.equals("m") || v.equals("masculino")) return "Masculino";
+        if (v.equals("female") || v.equals("f") || v.equals("feminino")) return "Feminino";
+        return v; // fallback
+    }
+
+    private String normalizeCountry(String v) {
+        if (v == null) return "";
+        v = v.trim().toUpperCase();
+        // Se seu modelo espera PT-BR (Brasil/França/Índia), converta aqui:
+        if (v.equals("BR") || v.equals("BRAZIL") || v.equals("BRASIL")) return "Brasil";
+        if (v.equals("FR") || v.equals("FRANCE") || v.equals("FRANÇA")) return "França";
+        if (v.equals("IN") || v.equals("INDIA") || v.equals("ÍNDIA")) return "Índia";
+        return v;
+    }
+
+    private String normalizeDevice(String v) {
+        if (v == null)
+            return "";
+        v = v.trim().toLowerCase();
+        if (v.equals("desktop"))
+            return "Web";
+        if (v.equals("mobile"))
+            return "Mobile";
+        return v;
+    }
+
+    private String normalizeSubscription(String v) {
+        if (v == null)
+            return "";
+        v = v.trim();
+        // mantém como está, mas garante capitalização conhecida:
+        if (v.equalsIgnoreCase("free"))
+            return "Free";
+        if (v.equalsIgnoreCase("premium"))
+            return "Premium";
+        if (v.equalsIgnoreCase("student"))
+            return "Student";
+        if (v.equalsIgnoreCase("family"))
+            return "Family";
+        if (v.equalsIgnoreCase("duo"))
+            return "Duo";
+        return v;
+    }
+
     private CustomerProfile parseRowToProfile(String[] row, String[] headers) {
         Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < Math.min(row.length, headers.length); i++) map.put(headers[i].toLowerCase().trim().replace(" ", "_"), row[i]);
+        for (int i = 0; i < Math.min(row.length, headers.length); i++)
+            map.put(headers[i].toLowerCase().trim().replace(" ", "_"), row[i]);
         return mapToProfile(map);
     }
 
@@ -378,48 +443,89 @@ public class BatchProcessingService implements BatchProcessingUseCase {
         return mapToProfile(map);
     }
 
-    private int parseInt(String v) { try { return (int) Double.parseDouble(v); } catch(Exception e) { return 0; } }
-    private double parseDouble(String v) { try { return Double.parseDouble(v); } catch(Exception e) { return 0.0; } }
-    private boolean parseBoolean(String v) { if (v == null) return false; v = v.toLowerCase().trim(); return v.equals("1") || v.equals("true") || v.equals("yes"); }
+    private int parseInt(String v) {
+        try {
+            return (int) Double.parseDouble(v);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private double parseDouble(String v) {
+        try {
+            return Double.parseDouble(v);
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    private boolean parseBoolean(String v) {
+        if (v == null)
+            return false;
+        v = v.trim().toLowerCase();
+        return v.equals("1") || v.equals("1.0") || v.equals("true") || v.equals("yes") || v.equals("y") || v.equals("sim");
+    }
+
 
     private String[] extractHeadersFromRow(Row row) {
         int cols = row.getLastCellNum();
         String[] h = new String[cols];
-        for (int i = 0; i < cols; i++) { var c = row.getCell(i); h[i] = c != null ? c.getStringCellValue() : ""; }
+        for (int i = 0; i < cols; i++) {
+            var c = row.getCell(i);
+            h[i] = c != null ? c.getStringCellValue() : "";
+        }
         return h;
     }
 
     private void updateJobStatus(String id, BatchResult r) {
         BatchProcessingStatus c = jobStatuses.get(id);
-        if (c != null) jobStatuses.put(id, new BatchProcessingStatus(id, r.success() ? "COMPLETED" : "FAILED", c.totalRecords(), r.totalProcessed(), r.successCount(), r.errorCount(), c.startTime(), LocalDateTime.now(), c.filename(), c.fileSizeBytes(), r.errors().toString()));
+        if (c != null)
+            jobStatuses.put(id, new BatchProcessingStatus(id, r.success() ? "COMPLETED" : "FAILED", c.totalRecords(), r.totalProcessed(), r.successCount(), r.errorCount(), c.startTime(), LocalDateTime.now(), c.filename(), c.fileSizeBytes(), r.errors().toString()));
     }
 
     private void updateJobStatus(String id, String s, String m, int p) {
         BatchProcessingStatus c = jobStatuses.get(id);
-        if (c != null) jobStatuses.put(id, new BatchProcessingStatus(id, s, c.totalRecords(), p, c.successCount(), c.errorCount(), c.startTime(), c.endTime(), c.filename(), c.fileSizeBytes(), m));
+        if (c != null)
+            jobStatuses.put(id, new BatchProcessingStatus(id, s, c.totalRecords(), p, c.successCount(), c.errorCount(), c.startTime(), c.endTime(), c.filename(), c.fileSizeBytes(), m));
     }
 
     private void updateProcessedRecords(String id, int count) {
         BatchProcessingStatus c = jobStatuses.get(id);
-        if (c != null) jobStatuses.put(id, new BatchProcessingStatus(id, c.status(), c.totalRecords(), count, c.successCount(), c.errorCount(), c.startTime(), c.endTime(), c.filename(), c.fileSizeBytes(), c.errorMessage()));
+        if (c != null)
+            jobStatuses.put(id, new BatchProcessingStatus(id, c.status(), c.totalRecords(), count, c.successCount(), c.errorCount(), c.startTime(), c.endTime(), c.filename(), c.fileSizeBytes(), c.errorMessage()));
     }
 
     private void handleJobError(String id, Throwable ex) {
         BatchProcessingStatus c = jobStatuses.get(id);
-        if (c != null) jobStatuses.put(id, new BatchProcessingStatus(id, "FAILED", c.totalRecords(), c.processedRecords(), c.successCount(), c.errorCount(), c.startTime(), LocalDateTime.now(), c.filename(), c.fileSizeBytes(), ex.getMessage()));
+        if (c != null)
+            jobStatuses.put(id, new BatchProcessingStatus(id, "FAILED", c.totalRecords(), c.processedRecords(), c.successCount(), c.errorCount(), c.startTime(), LocalDateTime.now(), c.filename(), c.fileSizeBytes(), ex.getMessage()));
     }
 
-    @Override public Map<String, Object> getJobStatus(String id) { return convertStatusToMap(jobStatuses.get(id)); }
-    @Override public boolean isModelHealthy() { return inferencePort.isModelLoaded(); }
-    @Override public void clearPredictionCache() {
+    @Override
+    public Map<String, Object> getJobStatus(String id) {
+        return convertStatusToMap(jobStatuses.get(id));
+    }
+
+    @Override
+    public boolean isModelHealthy() {
+        return inferencePort.isModelLoaded();
+    }
+
+    @Override
+    public void clearPredictionCache() {
         if (cacheManager != null) {
             cacheManager.getCacheNames().forEach(n -> {
                 var cache = cacheManager.getCache(n);
-                if (cache != null) cache.clear();
+                if (cache != null)
+                    cache.clear();
             });
         }
     }
-    @Override public Map<String, Object> getCacheStatistics() { return new HashMap<>(); }
+
+    @Override
+    public Map<String, Object> getCacheStatistics() {
+        return new HashMap<>();
+    }
 
     /**
      * Limpa jobs finalizados há mais de 24 horas para evitar memory leak.
@@ -446,10 +552,15 @@ public class BatchProcessingService implements BatchProcessingUseCase {
     }
 
     private Map<String, Object> convertStatusToMap(BatchProcessingStatus s) {
-        if(s==null) return Map.of();
+        if (s == null)
+            return Map.of();
         Map<String, Object> m = new HashMap<>();
-        m.put("job_id", s.jobId()); m.put("status", s.status()); m.put("processed", s.processedRecords());
-        m.put("success_count", s.successCount()); m.put("error_count", s.errorCount()); m.put("message", s.errorMessage());
+        m.put("job_id", s.jobId());
+        m.put("status", s.status());
+        m.put("processed", s.processedRecords());
+        m.put("success_count", s.successCount());
+        m.put("error_count", s.errorCount());
+        m.put("message", s.errorMessage());
         return m;
     }
 

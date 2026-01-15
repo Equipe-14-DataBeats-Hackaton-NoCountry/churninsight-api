@@ -177,6 +177,11 @@ public class OnnxRuntimeAdapter implements InferencePort {
             return new float[]{1.0f - pChurn, pChurn};
         }
 
+        // Se vier [p0, p1] e o modelo estiver invertido, inverte SEMPRE (map e array)
+        if (result.length >= 2 && INVERT_CLASSES) {
+            return new float[]{result[1], result[0]};
+        }
+
         return result;
     }
 
