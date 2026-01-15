@@ -3,7 +3,6 @@ package com.hackathon.databeats.churninsight.infra.adapter.input.web.controller;
 import com.hackathon.databeats.churninsight.application.dto.PredictionResult;
 import com.hackathon.databeats.churninsight.application.port.input.BatchProcessingUseCase;
 import com.hackathon.databeats.churninsight.application.port.input.PredictionStatsUseCase;
-import com.hackathon.databeats.churninsight.domain.enums.ChurnStatus;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 import com.hackathon.databeats.churninsight.domain.rules.ChurnDiagnosisService;
 import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.CustomerProfileRequest;
@@ -128,7 +127,7 @@ public class PredictionController {
             description = "Retorna predição com probabilidades detalhadas para cada classe"
     )
     @Cacheable(value = "predictionStats", key = "#request.toString() + '_' + #httpRequest.remoteAddr")
-    public PredictionStatsResponse stats(
+    public Map<String, Object> stats(
             @Valid @RequestBody CustomerProfileRequest request,
             HttpServletRequest httpRequest) {
 
@@ -137,14 +136,28 @@ public class PredictionController {
         CustomerProfile profile = request.toDomain();
 
         log.debug("Solicitação de estatísticas - UserId: {}, IP: {}", profile.userId(), requestIp);
-        PredictionResult resultado = predictionStatsUseCase.predictWithStats(profile, requesterId, requestIp);
 
-        return PredictionStatsResponse.builder()
-                .label(resultado.label())
-                .probability(resultado.probability())
-                .probabilities(resultado.probabilities())
-                .classProbabilities(resultado.classProbabilities())
-                .build();
+        PredictionResult result =
+                this.predictionStatsUseCase.predictWithStats(profile, requesterId, requestIp);
+
+        double prob = result.probability();
+        double threshold = this.modelMetadata.getThresholdOtimo();
+
+        // NOVO: mesmo nível de risco usado no /predict
+        String riskLevel = this.calculateRiskLevel(prob);
+        String riskMessage = this.generateRiskMessage(prob, threshold, riskLevel);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("label", result.label());
+        response.put("probability", prob);
+        response.put("probabilities", result.probabilities());
+        response.put("class_probabilities", result.classProbabilities());
+
+        // Campos adicionais para o front (opcional, mas consistente)
+        response.put("risk_level", riskLevel);
+        response.put("risk_message", riskMessage);
+
+        return response;
     }
 
     /**
@@ -309,20 +322,66 @@ public class PredictionController {
      * Constrói a resposta da predição conforme contrato da API.
      */
     private Map<String, Object> construirResposta(PredictionResult resultado, CustomerProfile profile) {
-        String previsao = resultado.label() == ChurnStatus.WILL_CHURN
-                ? "Vai Cancelar"
-                : "Vai Continuar";
+        double prob = resultado.probability();
+        double threshold = modelMetadata.getThresholdOtimo();
 
-        Map<String, String> diagnostico = ChurnDiagnosisService.gerarDiagnostico(
-                profile, resultado.probability(), modelMetadata.getThresholdOtimo());
+        // Diagnóstico (já existe)
+        Map<String, String> diagnosis = ChurnDiagnosisService.gerarDiagnostico(
+                profile, prob, threshold
+        );
 
-        Map<String, Object> resposta = new LinkedHashMap<>();
-        resposta.put("prediction", previsao);
-        resposta.put("probability", Math.round(resultado.probability() * 10000) / 10000.0);
-        resposta.put("decision_threshold", modelMetadata.getThresholdOtimo());
-        resposta.put("ai_diagnosis", diagnostico);
+        // Nível de risco por faixa (baseado na probabilidade)
+        String riskLevel = this.calculateRiskLevel(prob);
 
-        return resposta;
+        // Mensagem principal exibida no front
+        String prediction;
+        if (prob >= 0.60) {
+            prediction = "Alto Risco de Cancelamento";
+        } else if (prob >= threshold) {
+            prediction = "Risco Moderado de Cancelamento";
+        } else {
+            prediction = "Baixo Risco de Cancelamento";
+        }
+
+        String riskMessage = this.generateRiskMessage(prob, threshold, riskLevel);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("prediction", prediction);
+
+        // Mantém probabilidade numérica (0 a 1) para o front
+        response.put("probability", Math.round(prob * 10000) / 10000.0);
+
+        // Threshold real usado pelo modelo
+        response.put("decision_threshold", threshold);
+
+        // Campos explicativos adicionais
+        response.put("risk_level", riskLevel);
+        response.put("risk_message", riskMessage);
+
+        response.put("ai_diagnosis", diagnosis);
+
+        return response;
+    }
+
+    private String calculateRiskLevel(double probability) {
+        if (probability >= 0.60) {
+            return "Alto Risco de Churn";
+        }
+        if (probability >= 0.40) {
+            return "Risco Moderado de Churn";
+        }
+        return "Baixo Risco de Churn";
+    }
+
+
+    private String generateRiskMessage(double prob, double threshold, String nivel) {
+        double pct = Math.round(prob * 1000.0) / 10.0; // 1 casa decimal (%)
+        double thPct = Math.round(threshold * 1000.0) / 10.0;
+
+        return String.format(
+                "Risco %s (%.1f%%). Classificação do modelo usa threshold de %.1f%%.",
+                nivel, pct, thPct
+        );
     }
 
     /**
