@@ -299,22 +299,44 @@ String predictionId = UUIDv7.randomUUID().toString();
 
 ---
 
+## Métricas do Modelo ONNX
+
 O modelo ONNX foi treinado com as seguintes características:
 
 | Métrica | Valor |
 |---------|-------|
-| Accuracy | 51.44% |
-| Precision | 26.76% |
-| Recall | 50.48% |
-| F1-Score | 34.98% |
-| AUC-ROC | 50.05% |
-| Threshold Ótimo | 0.412 |
+| Accuracy | 64.88% |
+| Precision | 31.50% |
+| Recall | 30.43% |
+| F1-Score | 30.96% |
+| AUC-ROC | 54.40% |
+| Threshold Ótimo | 0.263 |
+
+### Tipo de Modelo
+- **Algoritmo**: Logistic Regression com SMOTE
+- **Versão**: 1.0
+- **Data de Exportação**: 14/01/2026
+
+### Features Utilizadas
 
 **Features Numéricas:**
-- `age`, `listening_time`, `songs_played_per_day`, `skip_rate`, `ads_listened_per_week`, `offline_listening`
+- `age` - Idade do usuário
+- `listening_time` - Tempo de escuta
+- `songs_played_per_day` - Músicas reproduzidas por dia
+- `skip_rate` - Taxa de pulos
+- `ads_listened_per_week` - Anúncios ouvidos por semana
+- `offline_listening` - Escuta offline
+- `songs_per_minute` - Músicas por minuto
+- `ad_intensity` - Intensidade de anúncios
+- `frustration_index` - Índice de frustração
+- `is_heavy_user` - Indicador de usuário pesado
+- `premium_no_offline` - Premium sem uso offline
 
 **Features Categóricas:**
-- `gender`, `country`, `subscription_type`, `device_type`
+- `gender` - Gênero
+- `country` - País
+- `subscription_type` - Tipo de assinatura
+- `device_type` - Tipo de dispositivo
 
 ---
 
@@ -428,33 +450,33 @@ Realiza uma predição com diagnóstico completo de IA, incluindo fatores de ris
 **Request Body:**
 ```json
 {
-  "gender": "Male",
-  "age": 29,
-  "country": "Brazil",
-  "subscriptionType": "Premium",
-  "listeningTime": 540.0,
-  "songsPlayedPerDay": 12,
-  "skipRate": 0.15,
-  "adsListenedPerWeek": 0,
-  "deviceType": "Mobile",
-  "offlineListening": true,
-  "userId": "12345"
+  "user_id": "12345",
+  "gender": "Masculino",
+  "age": 25,
+  "country": "Brasil",
+  "subscription_type": "Free",
+  "device_type": "Web",
+  "listening_time": 500,
+  "songs_played_per_day": 3,
+  "skip_rate": 0.8,
+  "ads_listened_per_week": 82,
+  "offline_listening": false
 }
 ```
 
 **Response:**
 ```json
 {
-  "label": "WILL_CHURN",
-  "probability": 0.6087930798530579,
-  "threshold": 0.412,
-  "diagnosis": {
-    "risk_factors": ["Alta taxa de skip", "Número baixo de anúncios"],
-    "retention_factors": ["Tempo de escuta adequado"],
-    "recommendation": "Ofereça recomendações personalizadas e reduza anúncios"
-  },
-  "confidence": 0.95,
-  "latency_ms": 25
+    "prediction": "Risco Moderado de Cancelamento",
+    "probability": 0.3284,
+    "decision_threshold": 0.262755,
+    "risk_level": "Baixo Risco de Churn",
+    "risk_message": "Risco Baixo Risco de Churn (32.8%). Classificação do modelo usa threshold de 26.3%.",
+    "ai_diagnosis": {
+        "primary_retention_factor": "Uso Regular da Plataforma",
+        "suggested_action": "Oferecer período de teste do plano Premium para aliviar interrupções de áudio.",
+        "primary_risk_factor": "Anúncios por Semana"
+    }
 }
 ```
 
@@ -469,13 +491,18 @@ Retorna predição com probabilidades detalhadas de cada classe e análise do th
 **Response:**
 ```json
 {
-  "label": "WILL_CHURN",
-  "probability": 0.6087930798530579,
-  "probabilities": [0.6087931],
-  "classProbabilities": {
-    "WILL_CHURN": 0.6087931,
-    "WILL_STAY": 0.39120692
-  }
+    "label": "WILL_CHURN",
+    "probability": 0.32837387919425964,
+    "probabilities": [
+        0.6716261,
+        0.32837388
+    ],
+    "class_probabilities": {
+        "WILL_STAY": 0.6716261,
+        "WILL_CHURN": 0.32837388
+    },
+    "risk_level": "Baixo Risco de Churn",
+    "risk_message": "Risco Baixo Risco de Churn (32.8%). Classificação do modelo usa threshold de 26.3%."
 }
 ```
 
@@ -510,10 +537,16 @@ Processa múltiplos perfis de clientes de forma assíncrona. Suporta até 1 milh
 ```json
 {
     "total_customers": 10000,
-    "global_churn_rate": 97.5,
-    "customers_at_risk": 9750,
-    "revenue_at_risk": 150824.0,
-    "model_accuracy": 0.5094
+    "global_churn_rate": 25.0,
+    "customers_at_risk": 2500,
+    "revenue_at_risk": 113933.4,
+    "model_accuracy": 0.6488,
+    "churn_distribution": [
+        2064,
+        7936
+    ],
+    "risk_factors": [],
+    "feature_importance": []
 }
 ```
 
@@ -986,17 +1019,17 @@ curl -X POST http://localhost:10808/predict \
   -u admin:Admin123 \
   -H "Content-Type: application/json" \
   -d '{
-    "gender": "Male",
-    "age": 29,
-    "country": "Brazil",
-    "subscriptionType": "Premium",
-    "listeningTime": 540.0,
-    "songsPlayedPerDay": 12,
-    "skipRate": 0.15,
-    "adsListenedPerWeek": 0,
-    "deviceType": "Mobile",
-    "offlineListening": true,
-    "userId": "12345"
+      "user_id": "12345",
+      "gender": "Masculino",
+      "age": 25,
+      "country": "Brasil",
+      "subscription_type": "Free",
+      "device_type": "Web",
+      "listening_time": 500,
+      "songs_played_per_day": 3,
+      "skip_rate": 0.8,
+      "ads_listened_per_week": 82,
+      "offline_listening": false
   }'
 ```
 
@@ -1205,14 +1238,14 @@ docker-compose logs app | grep "micrometer"
 ### Time Back-End 💻
 - [**Ezandro Bueno**](https://github.com/ezbueno)
 - [**Jorge Filipi Dias**](https://github.com/jorgefilipi)
-- [**Wanderson Souza**](https://github.com/wandersondevops)
-- [**Wendell Dorta**](https://github.com/WendellD3v)
+- [**Wanderson Souza**](https://github.com/wandersonjafe)
+- [**Wendell Dorta**](https://github.com/Wendell-Dorta)
 
 ### Time Data Science 📊
-- [**André Ribeiro**](https://github.com/andrerochads)
+- [**André Ribeiro**](https://github.com/aluizr)
 - [**Kelly Muehlmann**](https://github.com/kellymuehlmann)
 - [**Luiz Alves**](https://github.com/lf-all)
-- [**Mariana Fernandes**](https://github.com/mari-martins-fernandes)
+- [**Mariana Fernandes**](https://github.com/marianafernandes2204)
 
 ---
 
