@@ -78,12 +78,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-    # Secrets: adicionados como opção para deploy em Swarm/Kubernetes; mantemos env vars como fallback para docker-compose dev
-    secrets:
-      - db_root_password
-      - db_password
-      - gf_admin_password
-      - app_security_password
+    # secrets removidos — usando variáveis de ambiente definidas em .env
 
   # ============================================================================
   # FRONTEND (React + Nginx)
@@ -241,18 +236,4 @@ volumes:
   mysql_data:
   zabbix_db_data:
   grafana_data:
-
-
-# === Docker secrets (files under ./secrets) ===
-secrets:
-  db_root_password:
-    file: ./secrets/db_root_password.txt
-  db_password:
-    file: ./secrets/db_password.txt
-  gf_admin_password:
-    file: ./secrets/grafana_admin_password.txt
-  app_security_password:
-    file: ./secrets/app_security_password.txt
-  zabbix_db_password:
-    file: ./secrets/zabbix_db_password.txt
 
