@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -49,6 +50,10 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080,http://localhost:5173}")
     private String allowedOrigins;
 
+    // Dev toggle: permite chamadas POST para /predict e /predict/batch sem autenticação
+    @Value("${app.security.allow-unauthenticated-predict:false}")
+    private boolean allowUnauthenticatedPredict;
+
     @Bean
     @Order(1)
     public SecurityFilterChain healthFilterChain(HttpSecurity http) throws Exception {
@@ -81,9 +86,17 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/cache/clear").hasRole("ADMIN")
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    // Keep cache/clear restricted to ADMIN
+                    auth.requestMatchers("/cache/clear").hasRole("ADMIN");
+
+                    if (allowUnauthenticatedPredict) {
+                        // In dev/tunnel mode allow POSTs to prediction endpoints without Basic auth
+                        auth.requestMatchers(HttpMethod.POST, "/predict", "/predict/batch").permitAll();
+                    }
+
+                    auth.anyRequest().authenticated();
+                })
                 .httpBasic(basic -> basic.realmName("ChurnInsight API"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
@@ -95,8 +108,15 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // Configuração segura de CORS - lista branca de origens
-        List<String> origins = Arrays.asList(allowedOrigins.split(","));
-        config.setAllowedOrigins(origins);
+        // Suporta '*' (todos) via allowed origin patterns quando necessário (ex: dev/tunnel)
+        if (allowedOrigins != null && allowedOrigins.trim().equals("*")) {
+            // Permitir todos os padrões de origem (compatível com allowCredentials=true)
+            config.setAllowedOriginPatterns(List.of("*"));
+        } else {
+            List<String> origins = Arrays.asList(allowedOrigins.split(","));
+            config.setAllowedOrigins(origins);
+        }
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         config.setExposedHeaders(List.of("X-Rate-Limit-Remaining", "X-Rate-Limit-Limit"));

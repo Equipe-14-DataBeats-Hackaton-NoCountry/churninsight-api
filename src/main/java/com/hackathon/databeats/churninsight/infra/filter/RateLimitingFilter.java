@@ -122,6 +122,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         return path.startsWith("/actuator") ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/v3/api-docs") ||
-                path.equals("/favicon.ico");
+                path.equals("/favicon.ico") ||
+                // Exclude batch prediction endpoints to avoid rate-limiting large file uploads
+                path.startsWith("/predict/batch");
     }
 }
