@@ -30,9 +30,8 @@ import java.util.List;
  */
 @Configuration
 public class OpenApiConfig {
-
-    @Value("${server.port:10808}")
-    private int serverPort;
+    @Value("${app.public-base-url:http://localhost:10808}")
+    private String publicBaseUrl;
 
     /**
      * Configura o documento OpenAPI com metadados da API ChurnInsight.
@@ -97,11 +96,11 @@ public class OpenApiConfig {
     private List<Server> buildServers() {
         return List.of(
                 new Server()
-                        .url("http://localhost:" + serverPort)
-                        .description("Servidor de Desenvolvimento Local"),
+                        .url(publicBaseUrl)
+                        .description("Servidor público (host / porta exposta)"),
                 new Server()
-                        .url("http://churn-api:" + serverPort)
-                        .description("Servidor Docker Compose"),
+                        .url("http://churn-api:8080")
+                        .description("Servidor Docker Compose (rede interna)"),
                 new Server()
                         .url("https://api.churninsight.com")
                         .description("Servidor de Produção (quando disponível)")
