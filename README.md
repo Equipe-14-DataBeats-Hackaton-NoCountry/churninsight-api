@@ -1233,6 +1233,56 @@ docker-compose logs app | grep "micrometer"
 
 ---
 
+## 🔁 Padronização de Ambiente (Frontend + Backend via Docker)
+
+Este projeto foi ajustado para **rodar frontend e backend exclusivamente via Docker Compose**, garantindo que a aplicação funcione da mesma forma em qualquer máquina.
+
+### O que mudou
+
+* O **frontend passou a fazer parte deste repositório**, na pasta `frontend/`
+* O frontend é **buildado em Node e servido via Nginx** dentro de um container
+* O frontend **não acessa a API por IP/porta direta** — todas as chamadas são feitas para `/api/*`
+* O Nginx realiza **proxy interno** para o backend (`app:10808`) dentro da rede Docker
+
+### Benefícios
+
+* Elimina diferenças de ambiente entre desenvolvedores
+* Remove dependência de CORS baseado em host local
+* Evita erros de autenticação e status falso de "API Offline"
+* Swagger, frontend e backend passam a usar a mesma base de URL
+
+### Arquitetura de chamadas
+
+```text
+Browser
+  ↓ http://localhost:3000
+Frontend (Nginx)
+  ↓ /api/*
+Proxy interno
+  ↓
+Backend (Spring Boot - app:10808)
+```
+
+### Como subir o projeto
+
+```bash
+docker compose up --build
+```
+
+Não é necessário executar `npm run dev` manualmente.
+
+### Cloudflare Tunnel (opcional)
+
+Quando utilizado, o tunnel aponta para:
+
+```text
+http://frontend:3000
+```
+
+Por usar o nome do serviço Docker, ele funciona em qualquer máquina que utilize o mesmo `docker-compose.yml`, sem depender de configuração manual no host.
+
+---
+
 ## 👥 Equipe DataBeats
 
 ### Time Back-End 💻
