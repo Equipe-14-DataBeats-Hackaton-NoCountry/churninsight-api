@@ -33,10 +33,6 @@ build/
 ### VS Code ###
 .vscode/
 
-# Application properties with sensitive data
-src/main/resources/application.properties
-application-*.properties
-
 #Configuração e ambiente
 *.env
 
