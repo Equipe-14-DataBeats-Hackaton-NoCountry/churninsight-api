@@ -41,3 +41,13 @@ build/
 
 # Docker Compose local (cada dev tem o seu)
 docker-compose-local*
+
+# Frontend (não versionar)
+frontend/node_modules/
+frontend/.env
+frontend/.env.*
+
+# Frontend (não versionar)
+frontend/node_modules/
+frontend/.env
+frontend/.env.*
