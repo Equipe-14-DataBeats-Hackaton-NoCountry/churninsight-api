@@ -35,7 +35,7 @@ export function DashboardSummaryCards({
         <MetricCard
           title="Receita Potencial em Risco (Est.)"
           value={revenueLabel}
-          subtitle="Estimativa financeira da carteira sensível"
+          subtitle="Estimativa financeira do TOP 25% em risco"
           tone="revenue"
         />
         <MetricCard

@@ -37,7 +37,7 @@ public class DashboardMetricsService {
                 ? (customersAtRisk * 100.0) / totalCustomers
                 : 0.0;
 
-        // 4 - Receita em risco (mantém como está HOJE: baseada em WILL_CHURN)
+        // 4 - Receita em risco (alinhada com o mesmo critério do TOP 25%)
         double revenueAtRisk = this.calculateRevenueAtRisk();
 
         // 5 - Precisão do modelo (0..1)
@@ -132,14 +132,14 @@ public class DashboardMetricsService {
                 "Free", 0.0
         );
 
-        return planValues.entrySet().stream()
-                .mapToDouble(entry -> {
-                    long count = this.predictionHistoryRepository.count((root, query, cb) ->
-                            cb.and(
-                                    cb.equal(root.get("churnStatus"), ChurnStatus.WILL_CHURN),
-                                    cb.equal(root.get("subscriptionType"), entry.getKey())
-                            ));
-                    return count * entry.getValue();
+        List<Object[]> top25ByPlan = this.predictionHistoryRepository.getTop25SubscriptionCounts();
+
+        return top25ByPlan.stream()
+                .mapToDouble(row -> {
+                    String subscriptionType = row[0] == null ? "" : String.valueOf(row[0]);
+                    long count = safeLong(row[1]);
+                    double planValue = planValues.getOrDefault(subscriptionType, 0.0);
+                    return count * planValue;
                 })
                 .sum();
     }

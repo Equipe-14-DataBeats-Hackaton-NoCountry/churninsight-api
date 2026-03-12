@@ -107,4 +107,21 @@ public interface PredictionHistoryRepository extends
     WHERE row_num <= CEIL(total_count * 0.25)
     """, nativeQuery = true)
     Long countTop25AtRisk();
+
+                /**
+                 * Agrega clientes do TOP 25% por probabilidade agrupando por tipo de assinatura.
+                 * Retorna pares [subscription_type, count].
+                 */
+                @Query(value = """
+                SELECT ranked.subscription_type, COUNT(*)
+                FROM (
+                        SELECT subscription_type,
+                                                 ROW_NUMBER() OVER (ORDER BY probability DESC) as row_num,
+                                                 COUNT(*) OVER () as total_count
+                        FROM churn_history
+                ) ranked
+                WHERE ranked.row_num <= CEIL(ranked.total_count * 0.25)
+                GROUP BY ranked.subscription_type
+                """, nativeQuery = true)
+                List<Object[]> getTop25SubscriptionCounts();
 }
