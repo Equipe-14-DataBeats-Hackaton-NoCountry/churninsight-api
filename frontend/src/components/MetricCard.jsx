@@ -45,17 +45,17 @@ export function MetricCard({ title, value, subtitle, tone = 'neutral' }) {
     <motion.div
       className="card"
       style={{
-        minWidth: 160,
+        minWidth: 146,
         background: palette.background,
         border: `1px solid ${palette.border}`,
         boxShadow: `inset 0 1px 0 ${palette.glow}`,
         textAlign: 'center',
         display: 'grid',
-        gridTemplateRows: '6px 60px 64px 68px',
+        gridTemplateRows: '5px 50px 52px 54px',
         justifyItems: 'center',
         alignItems: 'center',
-        minHeight: 196,
-        padding: '1.35rem 1.15rem',
+        minHeight: 166,
+        padding: '0.95rem 0.82rem',
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -65,26 +65,26 @@ export function MetricCard({ title, value, subtitle, tone = 'neutral' }) {
       <div
         style={{
           width: 34,
-          height: 3,
+          height: 2,
           borderRadius: 999,
           background: palette.border,
           marginInline: 'auto',
         }}
       />
-      <p style={{ color: palette.label, margin: 0, fontSize: '0.86rem', fontWeight: 600, lineHeight: 1.28, maxWidth: 172, textAlign: 'center', textWrap: 'balance', marginInline: 'auto' }}>
+      <p style={{ color: palette.label, margin: 0, fontSize: '0.76rem', fontWeight: 600, lineHeight: 1.2, maxWidth: 154, textAlign: 'center', textWrap: 'balance', marginInline: 'auto' }}>
         {title}
       </p>
-      <p style={{ color: palette.value, fontSize: 'clamp(1.75rem, 2.4vw, 2.25rem)', fontWeight: 800, lineHeight: 1, margin: 0, textAlign: 'center', marginInline: 'auto', fontVariantNumeric: 'tabular-nums' }}>
+      <p style={{ color: palette.value, fontSize: 'clamp(1.42rem, 1.95vw, 1.82rem)', fontWeight: 800, lineHeight: 1, margin: 0, textAlign: 'center', marginInline: 'auto', fontVariantNumeric: 'tabular-nums' }}>
         {value}
       </p>
       <p
         style={{
           color: palette.label,
           opacity: subtitle ? 0.82 : 0,
-          fontSize: '0.73rem',
+          fontSize: '0.69rem',
           margin: 0,
-          lineHeight: 1.42,
-          maxWidth: 176,
+          lineHeight: 1.32,
+          maxWidth: 156,
           textAlign: 'center',
           textWrap: 'balance',
           marginInline: 'auto',

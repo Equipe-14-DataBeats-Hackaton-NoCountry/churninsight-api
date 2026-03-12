@@ -13,7 +13,7 @@ export function DashboardSummaryCards({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: '16px',
           marginBottom: '20px',
           alignItems: 'stretch',
