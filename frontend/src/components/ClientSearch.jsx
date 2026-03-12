@@ -52,7 +52,7 @@ const styles = {
     background: '#242424',
     padding: '25px',
     borderRadius: '8px',
-    borderLeft: '5px solid #1DB954',
+    borderLeft: '5px solid #38bdf8',
     height: '100%',
     display: 'flex',
     flexDirection: 'column',

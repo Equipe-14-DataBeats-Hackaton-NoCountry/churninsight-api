@@ -39,13 +39,10 @@ public class DashboardMetricsService {
         // 5 - Precisão do modelo (0..1)
         double modelAccuracy = this.modelMetadata.getAccuracy();
 
-        // 6 - Distribuição (para gráfico): [willStay, willChurn] (mantém)
-        List<Long> churnDistribution = buildChurnDistribution();
-
-        // 7 - Principais fatores (consolidado no backend)
+        // 6 - Principais fatores (consolidado no backend)
         List<RiskFactorItem> riskFactors = buildRiskFactors(totalCustomers);
 
-        // 8 - Feature importance (proxy baseado em frequência dos fatores)
+        // 7 - Feature importance (proxy baseado em frequência dos fatores)
         List<FeatureImportanceItem> featureImportance = buildFeatureImportanceFromRiskFactors(riskFactors);
 
         return DashboardMetricsResponse.builder()
@@ -54,19 +51,9 @@ public class DashboardMetricsService {
                 .globalChurnRate(round(monitoringRate))
                 .revenueAtRisk(round2(revenueAtRisk))
                 .modelAccuracy(modelAccuracy)
-                .churnDistribution(churnDistribution)
                 .riskFactors(riskFactors)
                 .featureImportance(featureImportance)
                 .build();
-    }
-
-    /**
-     * [willStay, willChurn]
-     */
-    private List<Long> buildChurnDistribution() {
-        long willChurn = predictionHistoryRepository.countByChurnStatus(ChurnStatus.WILL_CHURN);
-        long willStay = predictionHistoryRepository.countByChurnStatus(ChurnStatus.WILL_STAY);
-        return List.of(willStay, willChurn);
     }
 
     /**

@@ -34,8 +34,28 @@ const runtimeCredentials = {
 };
 
 /**
- * Ensure we have credentials available. If not present from env, try sessionStorage,
- * otherwise prompt the user once (kept only for the browser session).
+ * Allows setting credentials at runtime without browser prompt UX.
+ * Useful when env vars are intentionally omitted.
+ */
+export const setApiCredentials = (username, password, persistInSession = true) => {
+  if (!username || !password) {
+    throw new Error('Usuario e senha sao obrigatorios para autenticar na API')
+  }
+
+  runtimeCredentials.username = username
+  runtimeCredentials.password = password
+
+  if (persistInSession) {
+    try {
+      sessionStorage.setItem('churn_api_creds', JSON.stringify({ username, password }))
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+}
+
+/**
+ * Ensure we have credentials available. If not present from env, try sessionStorage.
  */
 const ensureCredentials = () => {
   if (runtimeCredentials.username && runtimeCredentials.password) return;
@@ -55,35 +75,7 @@ const ensureCredentials = () => {
     // ignore sessionStorage errors
   }
 
-  // As a last resort, prompt the user (format: username:password). This is intended for
-  // development / tunnel usage only. Credentials are kept in sessionStorage for convenience.
-  // We avoid using persistent storage for security reasons.
-  // Use a single prompt to simplify UX; user can cancel to abort.
-  if (typeof window !== 'undefined' && typeof prompt === 'function') {
-    const input = prompt('Informe suas credenciais para a API no formato username:password (válido apenas nesta sessão):');
-    if (!input) {
-      throw new Error('Credenciais da API não fornecidas');
-    }
-    const idx = input.indexOf(':');
-    if (idx <= 0) {
-      throw new Error('Formato inválido. Use username:password');
-    }
-    runtimeCredentials.username = input.slice(0, idx);
-    runtimeCredentials.password = input.slice(idx + 1);
-
-    try {
-      sessionStorage.setItem('churn_api_creds', JSON.stringify({
-        username: runtimeCredentials.username,
-        password: runtimeCredentials.password,
-      }));
-    } catch (e) {
-      // ignore storage errors
-    }
-
-    return;
-  }
-
-  throw new Error('Sem credenciais disponíveis para a API');
+  throw new Error('Sem credenciais para a API. Configure VITE_API_USERNAME/VITE_API_PASSWORD ou chame setApiCredentials(username, password).');
 };
 
 // =============================================================================

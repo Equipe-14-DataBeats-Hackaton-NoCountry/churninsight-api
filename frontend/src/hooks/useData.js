@@ -14,7 +14,6 @@ const normalizeDashboardMetrics = (data) => {
   // model_accuracy vem 0..1
   const accuracyPct = data.model_accuracy == null ? 0 : Number(data.model_accuracy) * 100;
 
-  // churn_distribution vem [willStay, willChurn]
   const dist = Array.isArray(data.churn_distribution) ? data.churn_distribution : [0, 0];
 
   // feature_importance vem [] por enquanto; manter array
@@ -37,11 +36,10 @@ const hasMeaningfulDashboardData = (data) => {
   if (!data) return false;
 
   const totalCustomers = Number(data.total_customers ?? 0);
-  const churnDist = Array.isArray(data.churn_distribution) ? data.churn_distribution : [];
-  const hasDistribution = churnDist.some((v) => Number(v) > 0);
+  const customersAtRisk = Number(data.customers_at_risk ?? 0);
   const hasRiskFactors = Array.isArray(data.risk_factors) && data.risk_factors.length > 0;
 
-  return totalCustomers > 0 || hasDistribution || hasRiskFactors;
+  return totalCustomers > 0 || customersAtRisk > 0 || hasRiskFactors;
 };
 
 const loadPublicMetricsFallback = async () => {

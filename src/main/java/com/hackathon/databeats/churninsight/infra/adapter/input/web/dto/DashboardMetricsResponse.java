@@ -25,12 +25,6 @@ public class DashboardMetricsResponse {
     private double modelAccuracy;   // 0..1 (ex: 0.6488)
 
     /**
-     * Distribuição para o gráfico: [willStay, willChurn]
-     */
-    @JsonProperty("churn_distribution")
-    private List<Long> churnDistribution;
-
-    /**
      * Lista consolidada de fatores de risco (top N)
      */
     @JsonProperty("risk_factors")

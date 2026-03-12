@@ -1,4 +1,5 @@
 import React from 'react';
+import { translateFeature } from '../utils/featureLabels';
 
 export function ClientExplainability({ client }) {
   if (!client) return null;
@@ -63,40 +64,9 @@ export function ClientExplainability({ client }) {
     },
   }[riskLevel];
 
-  // -----------------------------
-  // Translation map (same idea you already use across the project)
-  // -----------------------------
-  const traducao = {
-    gender: 'Gênero',
-    gender_Male: 'Gênero Masculino',
-    gender_Female: 'Gênero Feminino',
-    age: 'Idade',
-    Age: 'Idade',
-    country: 'País',
-    country_FR: 'País França',
-    country_IN: 'País Índia',
-    subscription_type: 'Tipo de Assinatura',
-    subscription_type_Student: 'Assinatura Estudante',
-    listening_time: 'Tempo de Escuta',
-    songs_played_per_day: 'Músicas por Dia',
-    skip_rate: 'Taxa de Pulagem',
-    device_type: 'Tipo de Dispositivo',
-    ads_listened_per_week: 'Anúncios por Semana',
-    offline_listening: 'Uso Offline',
-    is_churned: 'Cancelamento (Churn)',
-    songs_per_minute: 'Músicas por Minuto',
-    ad_intensity: 'Intensidade de Anúncios',
-    frustration_index: 'Índice de Frustração',
-    is_heavy_user: 'Usuário Intenso (Heavy)',
-    premium_no_offline: 'Premium sem Offline',
-    premium_sub_month: 'Meses de Assinatura Premium',
-    fav_genre: 'Gênero Favorito',
-  };
-
   const traduzir = (termo) => {
     if (!termo || termo === 'N/A') return 'N/A';
-    const termoLimpo = String(termo).replace(/^num__/, '').replace(/^cat__/, '');
-    return traducao[termoLimpo] || termoLimpo;
+    return translateFeature(termo, termo);
   };
 
   // -----------------------------

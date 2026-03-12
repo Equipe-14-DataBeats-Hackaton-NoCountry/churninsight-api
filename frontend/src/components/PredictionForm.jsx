@@ -21,6 +21,7 @@
 import { useState, useRef } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { Zap } from 'lucide-react';
+import { translateFeatureLoose } from '../utils/featureLabels';
 
 // --- ESTILOS (Dark Theme Spotify) ---
 const inputStyle = {
@@ -149,17 +150,7 @@ export function PredictionForm() {
 
   // Função auxiliar para traduzir termos técnicos
   const traduzir = (texto) => {
-    if (!texto) return 'Desconhecido';
-    const mapa = {
-      'listening_time': 'Tempo de Escuta',
-      'skip_rate': 'Taxa de Pulos',
-      'songs_played_per_day': 'Músicas Diárias',
-      'ads_listened_per_week': 'Anúncios por Semana',
-      'age': 'Idade',
-      'subscription_type': 'Tipo de Assinatura',
-      'offline_listening': 'Uso Offline'
-    };
-    return mapa[texto] || texto.replace(/_/g, ' ');
+    return translateFeatureLoose(texto, 'Desconhecido');
   };
 
   // Alguns backends retornam 'churn_probability' ou 'probability'

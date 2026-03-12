@@ -1,7 +1,4 @@
 import { useState, useMemo, useEffect } from 'react'
-import { MetricCard } from '../components/MetricCard'
-import { ChurnDistributionChart, FeatureImportanceChart } from '../components/Charts'
-import { ClientExplainability } from '../components/ClientExplainability'
 import { PredictionForm } from '../components/PredictionForm'
 import { BatchUpload } from '../components/BatchUpload'
 import { ClientSearch } from '../components/ClientSearch'
@@ -10,6 +7,10 @@ import { useData } from '../hooks/useData'
 import { motion } from 'framer-motion'
 import { getDashboardMetrics } from '../services/api'
 import { LayoutDashboard, User, Upload, Search, Activity, AlertTriangle } from 'lucide-react'
+import { DashboardSummaryCards } from './dashboard/DashboardSummaryCards'
+import { DashboardOverviewTab } from './dashboard/DashboardOverviewTab'
+import { riskActionsByFactor } from './dashboard/riskActions'
+import { translateFeature } from '../utils/featureLabels'
 
 export default function Dashboard() {
   const { clients, loading: clientsLoading, error: clientsError, refresh: refreshClients } = useClients()
@@ -63,49 +64,6 @@ export default function Dashboard() {
     }
   }, [canShowData]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const engineDados = {
-    "Gênero": { nome: "Gênero", acao: "Ajustar campanhas de marketing para segmentação de gênero específica." },
-    "Gênero Masculino": { nome: "Gênero Masculino", acao: "Ajustar campanhas de marketing para segmentação de gênero masculino." },
-    "Gênero Feminino": { nome: "Gênero Feminino", acao: "Ajustar campanhas de marketing para segmentação de gênero feminino." },
-    "Idade": { nome: "Idade", acao: "Oferecer planos adequados à faixa etária (ex: Universitário ou Família)." },
-    "País": { nome: "País", acao: "Localizar conteúdo e ajustar preços conforme a moeda e região." },
-    "País França": { nome: "País França", acao: "Localizar conteúdo e ajustar preços conforme a moeda e região francesa." },
-    "País Índia": { nome: "País Índia", acao: "Localizar conteúdo e ajustar preços conforme a moeda e região indiana." },
-    "Tipo de Assinatura": { nome: "Tipo de Assinatura", acao: "Sugerir upgrade para planos com mais benefícios." },
-    "Assinatura Estudante": { nome: "Assinatura Estudante", acao: "Apresentar planos exclusivos para estudantes e após formar, oferecer descontos no plano premium ou plano pré-pago" },
-    "Tempo de Escuta": { nome: "Tempo de Escuta", acao: "Enviar recomendações personalizadas para aumentar o engajamento." },
-    "Músicas por Dia": { nome: "Músicas por Dia", acao: "Notificações push com novas playlists baseadas no comportamento diário." },
-    "Taxa de Pulagem": { nome: "Taxa de Pulagem", acao: "Recalibrar algoritmo de recomendação para reduzir pulos." },
-    "Tipo de Dispositivo": { nome: "Tipo de Dispositivo", acao: "Otimizar interface e bugs específicos para o hardware do usuário." },
-    "Anúncios por Semana": { nome: "Anúncios por Semana", acao: "Oferecer teste Premium para aliviar interrupções de áudio. Após o teste, oferecer plano premium ou plano pré-pago." },
-    "Uso Offline": { nome: "Uso Offline", acao: "Destacar funcionalidades de download em campanhas educacionais." },
-    "Músicas por Minuto": { nome: "Músicas por Minuto", acao: "Sugerir playlists focadas em ritmos específicos." },
-    "Intensidade de Anúncios": { nome: "Intensidade de Anúncios", acao: "Reduzir carga de anúncios temporariamente para reter o usuário. Ofertar planos sem anúncios." },
-    "Índice de Frustração": { nome: "Índice de Frustração", acao: "Enviar pesquisa de satisfação com cupom de desconto imediato." },
-    "Usuário Intenso (Heavy)": { nome: "Usuário Intenso (Heavy)", acao: "Oferecer programa de recompensas e acesso antecipado a recursos." },
-    "Premium sem Offline": { nome: "Premium sem Offline", acao: "Sugerir plano Premium completo com suporte a downloads." }
-  }
-
-  const mapaTraducao = {
-    "gender": "Gênero", "age": "Idade", "Age": "Idade", "country": "País",
-    "subscription_type": "Tipo de Assinatura",
-    "listening_time": "Tempo de Escuta",
-    "songs_played_per_day": "Músicas por Dia", "skip_rate": "Taxa de Pulagem",
-    "device_type": "Tipo de Dispositivo", "ads_listened_per_week": "Anúncios por Semana",
-    "offline_listening": "Uso Offline", "is_churned": "Cancelamento (Churn)",
-    "songs_per_minute": "Músicas por Minuto", "ad_intensity": "Intensidade de Anúncios",
-    "frustration_index": "Índice de Frustração", "is_heavy_user": "Usuário Intenso (Heavy)",
-    "premium_no_offline": "Premium sem Offline", "country_FR": "País França",
-    "country_IN": "País Índia", "subscription_type_Student": "Assinatura Estudante",
-    "gender_Male": "Gênero Masculino", "gender_Female": "Gênero Feminino"
-  }
-
-  const traduzir = (termo) => {
-    if (!termo) return ""
-    const limpo = termo.replace(/^num__|^cat__/, "")
-    return mapaTraducao[limpo] || limpo
-  }
-
   const handleBatchSuccess = () => {
     refreshClients()
     refreshMetrics()
@@ -141,7 +99,7 @@ export default function Dashboard() {
 
     return emRisco.reduce((acc, c) => {
       const rawFactor = getRiskFactor(c)
-      const factor = traduzir(rawFactor)
+      const factor = translateFeature(rawFactor)
       if (!factor) return acc
       if (!acc[factor]) acc[factor] = { qtd: 0, totalRisco: emRisco.length }
       acc[factor].qtd += 1
@@ -154,7 +112,6 @@ export default function Dashboard() {
 
   const hasSummaryData = canShowData && !!summary && (
     Number(summary?.total_customers ?? 0) > 0 ||
-    (Array.isArray(summary?.churn_distribution) && summary.churn_distribution.some(v => Number(v) > 0)) ||
     (Array.isArray(summary?.risk_factors) && summary.risk_factors.length > 0)
   )
 
@@ -225,7 +182,7 @@ export default function Dashboard() {
     ? clients.find(c => String(c.clientId) === String(selectedClientId)) || clients[0]
     : null
 
-  const motivoInfo = engineDados[selectedRiskFactor]
+  const motivoInfo = riskActionsByFactor[selectedRiskFactor]
   const motivoStats = statsPorMotivo[selectedRiskFactor]
 
   const tabStyle = (isActive, disabled = false) => ({
@@ -315,7 +272,7 @@ export default function Dashboard() {
             </p>
           ) : (
             <p style={{ marginTop: '8px', fontSize: '0.8rem', color: '#535353' }}>
-              Last sync: {new Date().toLocaleTimeString()}
+              Última sincronização: {new Date().toLocaleTimeString()}
             </p>
           )}
         </div>
@@ -340,35 +297,14 @@ export default function Dashboard() {
       {canShowData && !summary && !summaryError && <p style={{ color: '#b3b3b3' }}>Carregando dados...</p>}
       {canShowData && summaryError && <p style={{ color: '#ff4d4d' }}>{summaryError}</p>}
 
-      {/* CARDS */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '16px',
-        marginBottom: '20px',
-        alignItems: 'stretch'
-      }}>
-        <MetricCard title="Total de Clientes" value={safeTotalCustomers} tone="neutral" />
-        <MetricCard title="Clientes Prioritários para Ação" value={safeMonitoringLabel} subtitle="Top 25% da base com maior instabilidade" tone="warning" />
-        <MetricCard title="Clientes em Risco" value={safeCustomersAtRisk} subtitle="Quantidade em observação imediata" tone="danger" />
-        <MetricCard title="Receita Potencial em Risco (Est.)" value={safeRevenueLabel} subtitle="Estimativa financeira da carteira sensível" tone="revenue" />
-        <MetricCard title="Precisão do Modelo" value={safeAccuracyLabel} subtitle="Indicador técnico do modelo atual" tone="info" />
-      </div>
-
-      {/* NOTA EXPLICATIVA */}
-      {canShowData && (
-        <div style={{
-          fontSize: '0.85rem',
-          color: '#888',
-          marginBottom: '40px',
-          padding: '12px',
-          background: '#1a1a1a',
-          borderRadius: '6px',
-          borderLeft: '3px solid #f59e0b'
-        }}>
-          <strong>Nota:</strong> O gráfico principal segmenta a base entre clientes estáveis e clientes que exigem ação imediata. Assim, a leitura visual fica alinhada com o critério operacional usado no restante do dashboard.
-        </div>
-      )}
+      <DashboardSummaryCards
+        canShowData={canShowData}
+        totalCustomers={safeTotalCustomers}
+        monitoringLabel={safeMonitoringLabel}
+        customersAtRisk={safeCustomersAtRisk}
+        revenueLabel={safeRevenueLabel}
+        accuracyLabel={safeAccuracyLabel}
+      />
 
       {/* TABS */}
       <div style={{ marginBottom: '30px', borderBottom: '1px solid #333', paddingBottom: '15px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
@@ -405,139 +341,20 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* CONTENT */}
       {activeTab === 'dashboard' && (
-        <motion.div
-          key="dashboard"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px' }}
-        >
-          {/* LEFT COLUMN */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-            <div style={{ background: '#242424', padding: '30px', borderRadius: '8px' }}>
-              <h3 style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <AlertTriangle size={20} color="#f59e0b" />
-                Segmentação Operacional da Base
-              </h3>
-
-                {!canShowData ? (
-                <OfflineBlock text="Dados indisponíveis (API Offline)" />
-                ) : !actionBaseDistribution ? (
-                <OfflineBlock
-                    text="Sem dados de segmentação disponíveis no momento."
-                />
-                ) : (
-                <div style={{ height: '350px' }}>
-                    <ChurnDistributionChart
-                      data={actionBaseDistribution}
-                      labels={['Base estável', 'Prioridade de ação']}
-                      colors={['#475569', '#f59e0b']}
-                      hoverColors={['#64748b', '#fbbf24']}
-                    />
-                </div>
-                )}
-            </div>
-
-            <div style={{ background: '#242424', padding: '30px', borderRadius: '8px' }}>
-              <h3 style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Activity size={20} color="#1DB954" />
-                Importância das Variáveis (Top 10)
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: '20px' }}>
-                Variáveis com maior peso na predição do modelo
-              </p>
-
-            {!canShowData ? (
-                <OfflineBlock text="Dados indisponíveis (API Offline)" />
-                ) : !featImportance ? (
-                <OfflineBlock
-                    text="A versão atual do modelo utiliza Regressão Logística com SMOTE, que não fornece interpretabilidade nativa de features. Esta funcionalidade requer algoritmos com suporte a feature importance (ex: XGBoost, Random Forest)."
-                    />            
-                ) : (
-                <div style={{ height: '350px' }}>
-                    <FeatureImportanceChart data={featImportance} />
-                </div>
-                )}
-            </div>
-
-            {canShowData && selectedClient && (
-              <div style={{ background: '#242424', padding: '30px', borderRadius: '8px' }}>
-                <h3 style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <User size={20} color="#1DB954" />
-                  {selectedClientId ? 'Análise Detalhada do Cliente Selecionado' : 'Análise Detalhada (Amostra)'}
-                </h3>
-                <ClientExplainability client={selectedClient} />
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT COLUMN */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-            <div style={{ background: '#242424', padding: '30px', borderRadius: '8px' }}>
-              <h3 style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <AlertTriangle size={20} color="#f59e0b" />
-                Principais Fatores de Risco
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: '15px' }}>
-                Fatores mais frequentes entre os clientes prioritários
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {!canShowData ? (
-                  <p style={{ color: '#666', fontStyle: 'italic' }}>Dados indisponíveis (API Offline)</p>
-                ) : Object.keys(statsPorMotivo).length === 0 ? (
-                  <p style={{ color: '#666', fontStyle: 'italic' }}>Nenhum fator de risco detectado nos dados carregados.</p>
-                ) : (
-                  Object.entries(statsPorMotivo)
-                    .sort(([, a], [, b]) => b.qtd - a.qtd)
-                    .map(([motivo, { qtd, totalRisco }]) => (
-                      <motion.div
-                        key={motivo}
-                        whileHover={{ scale: 1.02, backgroundColor: '#2a2a2a' }}
-                        onClick={() => setSelectedRiskFactor(motivo === selectedRiskFactor ? "" : motivo)}
-                        style={{
-                          padding: '15px',
-                          borderRadius: '8px',
-                          background: '#181818',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          border: motivo === selectedRiskFactor ? '1px solid #f59e0b' : 'none'
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <p style={{ margin: 0, color: '#b3b3b3', fontSize: '0.9rem' }}>{motivo}</p>
-                          <h4 style={{ margin: 0, color: '#fff', fontSize: '1.2rem' }}>{qtd} usuários</h4>
-                        </div>
-                        <div style={{ color: '#f59e0b', fontSize: '1.5rem' }}>
-                          {totalRisco > 0 ? ((qtd / totalRisco) * 100).toFixed(1) : '0.0'}%
-                        </div>
-                      </motion.div>
-                    ))
-                )}
-              </div>
-            </div>
-
-            {canShowData && selectedRiskFactor && motivoInfo && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                style={{ background: '#2a2a2a', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #ffcc00' }}
-              >
-                <h4 style={{ color: '#ffcc00', margin: '0 0 10px 0' }}>{motivoInfo.nome}</h4>
-                <p style={{ color: '#b3b3b3', fontSize: '0.9rem', marginBottom: '15px' }}>
-                  {motivoStats?.qtd} clientes impactados
-                </p>
-                <p style={{ color: '#fff', fontSize: '0.95rem', fontStyle: 'italic' }}>
-                  "Ação Recomendada: {motivoInfo.acao}"
-                </p>
-              </motion.div>
-            )}
-          </div>
-        </motion.div>
+        <DashboardOverviewTab
+          canShowData={canShowData}
+          actionBaseDistribution={actionBaseDistribution}
+          featImportance={featImportance}
+          selectedClient={selectedClient}
+          selectedClientId={selectedClientId}
+          statsPorMotivo={statsPorMotivo}
+          selectedRiskFactor={selectedRiskFactor}
+          setSelectedRiskFactor={setSelectedRiskFactor}
+          motivoInfo={motivoInfo}
+          motivoStats={motivoStats}
+          OfflineBlock={OfflineBlock}
+        />
       )}
 
       {/* OUTRAS ABAS */}

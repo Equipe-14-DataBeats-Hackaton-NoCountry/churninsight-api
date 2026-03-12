@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bar, Pie } from 'react-chartjs-2';
+import { translateFeature } from '../utils/featureLabels';
 import { 
   Chart as ChartJS, 
   BarElement, 
@@ -19,30 +20,6 @@ ChartJS.register(
   Tooltip, 
   Legend
 );
-
-const traducaoFeatures = {
-  // Variáveis do Dataset e Métricas
-  "ads_listened_per_week": "Anúncios p/ Semana",
-  "offline_listening": "Escuta Offline",
-  "gender": "Gênero",
-  "device_type": "Dispositivo",
-  "ad_intensity": "Intensidade de Ads",
-  "frustration_index": "Índice de Frustração",
-  "listening_time": "Tempo de Escuta",
-  "songs_played_per_day": "Músicas p/ Dia",
-  "skip_rate": "Taxa de Pulos",
-  "subscription_type": "Plano",
-  "age": "Idade",
-  "country": "País",
-  "is_heavy_user": "Usuário Intenso",
-  
-  // Nomes que vêm do Engine de Dados
-  "Anúncios por Semana": "Anúncios p/ Semana",
-  "Uso Offline": "Uso Offline",
-  "Alta Frustração": "Alta Frustração",
-  "Intensidade de Ads": "Intensidade de Ads",
-  "Baixo Tempo de Uso": "Baixo Tempo de Uso"
-};
 
 // --- GRÁFICO DE PIZZA (CHURN) ---
 export function ChurnDistributionChart({
@@ -115,7 +92,7 @@ export function FeatureImportanceChart({ data }) {
   const chartData = {
     labels: data.map(f => {
       const nomeLimpo = f.name.replace(/^num__/, "").replace(/^cat__/, "");
-      return traducaoFeatures[nomeLimpo] || nomeLimpo;
+      return translateFeature(nomeLimpo, nomeLimpo);
     }),
     datasets: [{
       label: 'Impacto no Modelo',
