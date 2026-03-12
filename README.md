@@ -1,5 +1,7 @@
 # ChurnInsight API 🎵
 
+<!-- markdownlint-disable MD013 -->
+
 API de Machine Learning para predição de churn de usuários em plataformas de streaming de música, desenvolvida com Spring Boot e ONNX Runtime.
 
 > 🏆 Projeto desenvolvido pela **Equipe DataBeats** para o **Hackathon ONE (Oracle Next Education)**
@@ -31,7 +33,7 @@ ChurnInsight é uma aplicação que utiliza um modelo de Logistic Regression tre
 
 O projeto segue os princípios da **Arquitetura Hexagonal**:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      CAMADA DE ENTRADA                      │
 │  ┌─────────────────┐          ┌──────────────────┐          │
@@ -128,7 +130,8 @@ Histórico de predições com suporte a:
 - Paginação (até 100 registros por página)
 
 **Exemplo:**
-```
+
+```http
 GET /clients?page=0&size=50&sortBy=probability&churnStatus=WILL_CHURN&ageMin=20&ageMax=35&country=Brazil
 ```
 
@@ -164,6 +167,7 @@ public static boolean isChurning(double probability) {
 ## 🚀 Tecnologias
 
 ### Core
+
 - **Java 21** (Eclipse Temurin)
 - **Spring Boot 3.5.9**
 - **Spring Security** (HTTP Basic Auth)
@@ -171,39 +175,47 @@ public static boolean isChurning(double probability) {
 - **Spring Validation** (Jakarta Validation)
 
 ### Machine Learning
+
 - **ONNX Runtime 1.19.2** (inferência do modelo)
 - **Logistic Regression com SMOTE** (modelo treinado)
 
 ### Banco de Dados
+
 - **MySQL 8.0** (mysql-connector-j)
 - **Flyway** (migrações de schema)
 
 ### Cache & Performance
+
 - **Caffeine Cache 3.1.8** (cache em memória)
 - **Bucket4j 8.14.0** (rate limiting)
 
 ### Observabilidade
+
 - **Spring Boot Actuator**
 - **Micrometer** + **Prometheus Registry**
 - **Custom Health Indicators**
 
 ### Processamento em Lote
+
 - **Apache POI 5.2.4** (leitura de XLSX)
 - **xlsx-streamer 2.1.0** (streaming para grandes arquivos XLSX)
 - **Univocity Parsers 2.9.1** (parsing de CSV otimizado)
 
-### Observabilidade
+### Documentacao e Monitoramento
+
 - **Spring Boot Actuator**
 - **Micrometer** + **Prometheus Registry**
 - **Custom Health Indicators** (modelo ONNX)
 - **SpringDoc OpenAPI 2.8.15** (Swagger/OpenAPI 3.0)
 
 ### Utilitários
+
 - **Lombok** (redução de boilerplate)
 - **dotenv-java 3.2.0** (gerenciamento de variáveis de ambiente)
 - **Log4j** (logging estruturado via SLF4J)
 
 ### Containerização
+
 - **Docker** + **Docker Compose**
 - **Multi-stage build** para otimização de imagem
 - **ZGC Garbage Collector** para baixa latência
@@ -216,7 +228,7 @@ public static boolean isChurning(double probability) {
 
 O processamento em lote segue um pipeline otimizado:
 
-```
+```text
 Upload do Arquivo
     ↓
 [Validação] - Verifica formato, tamanho e headers
@@ -255,7 +267,7 @@ Processamento Completo
 
 ### Arquitetura Hexagonal (Ports & Adapters)
 
-```
+```text
 ┌─────────────────────────────────────┐
 │      REST Controller (Input)        │
 └──────────────┬──────────────────────┘
@@ -304,7 +316,7 @@ String predictionId = UUIDv7.randomUUID().toString();
 O modelo ONNX foi treinado com as seguintes características:
 
 | Métrica | Valor |
-|---------|-------|
+| ------- | ----- |
 | Accuracy | 64.88% |
 | Precision | 31.50% |
 | Recall | 30.43% |
@@ -313,6 +325,7 @@ O modelo ONNX foi treinado com as seguintes características:
 | Threshold Ótimo | 0.263 |
 
 ### Tipo de Modelo
+
 - **Algoritmo**: Logistic Regression com SMOTE
 - **Versão**: 1.0
 - **Data de Exportação**: 14/01/2026
@@ -320,6 +333,7 @@ O modelo ONNX foi treinado com as seguintes características:
 ### Features Utilizadas
 
 **Features Numéricas:**
+
 - `age` - Idade do usuário
 - `listening_time` - Tempo de escuta
 - `songs_played_per_day` - Músicas reproduzidas por dia
@@ -333,10 +347,28 @@ O modelo ONNX foi treinado com as seguintes características:
 - `premium_no_offline` - Premium sem uso offline
 
 **Features Categóricas:**
+
 - `gender` - Gênero
 - `country` - País
 - `subscription_type` - Tipo de assinatura
 - `device_type` - Tipo de dispositivo
+
+---
+
+## 📄 Documentação de Execução Local
+
+- Playbook Colab -> API -> Validação: [docs/PLAYBOOK_COLAB_IMPORTACAO.md](docs/PLAYBOOK_COLAB_IMPORTACAO.md)
+- Resumo de 1 página: [docs/RESUMO_EXECUCAO_LOCAL.md](docs/RESUMO_EXECUCAO_LOCAL.md)
+- Relatório completo: [docs/EXECUCAO_LOCAL_RELATORIO.md](docs/EXECUCAO_LOCAL_RELATORIO.md)
+- Versão entrega (Markdown): [docs/RELATORIO_EXECUCAO_LOCAL_ENTREGA.md](docs/RELATORIO_EXECUCAO_LOCAL_ENTREGA.md)
+- Versão entrega (HTML): [docs/RELATORIO_EXECUCAO_LOCAL_ENTREGA.html](docs/RELATORIO_EXECUCAO_LOCAL_ENTREGA.html)
+- Versão entrega (PDF): [docs/RELATORIO_EXECUCAO_LOCAL_ENTREGA.pdf](docs/RELATORIO_EXECUCAO_LOCAL_ENTREGA.pdf)
+- Apresentação executiva (Markdown): [docs/APRESENTACAO_EXECUTIVA_EXECUCAO_LOCAL.md](docs/APRESENTACAO_EXECUTIVA_EXECUCAO_LOCAL.md)
+- Apresentação executiva (HTML): [docs/APRESENTACAO_EXECUTIVA_EXECUCAO_LOCAL.html](docs/APRESENTACAO_EXECUTIVA_EXECUCAO_LOCAL.html)
+- Apresentação executiva (PDF): [docs/APRESENTACAO_EXECUTIVA_EXECUCAO_LOCAL.pdf](docs/APRESENTACAO_EXECUTIVA_EXECUCAO_LOCAL.pdf)
+- Versão banca (Markdown): [docs/APRESENTACAO_BANCA_EXECUTIVA.md](docs/APRESENTACAO_BANCA_EXECUTIVA.md)
+- Versão banca (HTML): [docs/APRESENTACAO_BANCA_EXECUTIVA.html](docs/APRESENTACAO_BANCA_EXECUTIVA.html)
+- Versão banca (PDF): [docs/APRESENTACAO_BANCA_EXECUTIVA.pdf](docs/APRESENTACAO_BANCA_EXECUTIVA.pdf)
 
 ---
 
@@ -386,6 +418,7 @@ curl http://localhost:10808/actuator/health
 ```
 
 Resposta esperada:
+
 ```json
 {
   "status": "UP",
@@ -437,7 +470,8 @@ Resposta esperada:
 Todos os endpoints (exceto `/actuator/**`) requerem **HTTP Basic Authentication**.
 
 Adicione o header:
-```
+
+```text
 Authorization: Basic base64(username:password)
 ```
 
@@ -448,6 +482,7 @@ Authorization: Basic base64(username:password)
 Realiza uma predição com diagnóstico completo de IA, incluindo fatores de risco e retenção.
 
 **Request Body:**
+
 ```json
 {
   "user_id": "12345",
@@ -465,6 +500,7 @@ Realiza uma predição com diagnóstico completo de IA, incluindo fatores de ris
 ```
 
 **Response:**
+
 ```json
 {
     "prediction": "Risco Moderado de Cancelamento",
@@ -489,6 +525,7 @@ Retorna predição com probabilidades detalhadas de cada classe e análise do th
 **Request Body:** (mesmo formato do `/predict`)
 
 **Response:**
+
 ```json
 {
     "label": "WILL_CHURN",
@@ -513,10 +550,12 @@ Retorna predição com probabilidades detalhadas de cada classe e análise do th
 Processa múltiplos perfis de clientes de forma assíncrona. Suporta até 1 milhão de registros.
 
 **Request:**
+
 - Form parameter: `file` (CSV ou XLSX)
 - Tamanho máximo: 200MB
 
 **Response (202 Accepted):**
+
 ```json
 {
   "message": "Processamento iniciado com sucesso",
@@ -534,6 +573,7 @@ Processa múltiplos perfis de clientes de forma assíncrona. Suporta até 1 milh
 **GET** `/dashboard/metrics`
 
 **Response:**
+
 ```json
 {
     "total_customers": 10000,
@@ -578,11 +618,13 @@ Possíveis status: `QUEUED`, `PROCESSING`, `COMPLETED`, `FAILED`, `CANCELLED`
 Busca paginada com filtros avançados de histórico de predições.
 
 **Query Parameters:**
-```
+
+```http
 GET /clients?page=0&size=10&sortBy=createdAt&churnStatus=WILL_CHURN&startDate=2024-01-01&endDate=2024-12-31&minProbability=0.5
 ```
 
 **Response:**
+
 ```json
 {
   "content": [
@@ -607,6 +649,7 @@ GET /clients?page=0&size=10&sortBy=createdAt&churnStatus=WILL_CHURN&startDate=20
 ```
 
 **Filtros Disponíveis:**
+
 - `page`: Página (0-indexed)
 - `size`: Tamanho da página (max 100)
 - `sortBy`: Campo de ordenação (createdAt, probability, age, etc)
@@ -626,10 +669,12 @@ GET /clients?page=0&size=10&sortBy=createdAt&churnStatus=WILL_CHURN&startDate=20
 Retorna lista de predições pré-calculadas carregadas do arquivo `clients.json`.
 
 **Query Parameters:**
+
 - `page`: Página (0-indexed, padrão: 0)
 - `size`: Tamanho da página (max 100, padrão: 10)
 
 **Response:**
+
 ```json
 {
   "content": [
@@ -673,6 +718,7 @@ Estatísticas agregadas das predições pré-calculadas.
 Retorna o contrato (schema) da API com detalhes de todas as features esperadas.
 
 **Response:**
+
 ```json
 {
   "version": "1.0",
@@ -717,7 +763,8 @@ A API implementa rate limiting para evitar abuso:
 - Resposta `429 Too Many Requests` quando o limite é excedido
 
 Headers de resposta:
-```
+
+```text
 X-Rate-Limit-Limit: 100
 X-Rate-Limit-Remaining: 87
 ```
@@ -727,7 +774,7 @@ X-Rate-Limit-Remaining: 87
 Todos os campos do `CustomerProfile` são validados:
 
 | Campo | Validação |
-|-------|-----------|
+| ----- | --------- |
 | `age` | Entre 10 e 120 |
 | `listeningTime` | > 0 |
 | `songsPlayedPerDay` | >= 0 |
@@ -739,7 +786,7 @@ Todos os campos do `CustomerProfile` são validados:
 
 ## 📦 Estrutura do Projeto
 
-```
+```text
 src/main/java/com/hackathon/databeats/churninsight/
 ├── application/
 │   ├── dto/                           # Data Transfer Objects
@@ -867,7 +914,7 @@ app.db.insert-threads=10
 app.db.chunk-size=1500
 ```
 
-### Rate Limiting
+### Rate Limiting (Configuracao)
 
 ```properties
 app.rate-limit.requests-per-second=50
@@ -885,6 +932,7 @@ spring.servlet.multipart.max-request-size=200MB
 ### JVM Tuning (Dockerfile)
 
 O container está configurado com:
+
 - **ZGC (Z Garbage Collector)** para baixa latência e pause times < 1ms
 - **MaxRAMPercentage=75%** (usa 75% da RAM do container)
 - **Virtual Threads (Java 21+)** para melhor throughput
@@ -1097,7 +1145,8 @@ curl http://localhost:10808/actuator/prometheus
 **Import via Postman:**
 
 Você pode importar a coleção OpenAPI diretamente de:
-```
+
+```text
 http://localhost:10808/v3/api-docs
 ```
 
@@ -1132,6 +1181,7 @@ ls -la src/main/resources/modelo_hackathon.onnx
 ### Erro: "Connection refused" ao MySQL
 
 **Solução:** Aguarde o health check do MySQL estar pronto:
+
 ```bash
 docker-compose logs db
 # Aguarde até ver: "ready for connections"
@@ -1158,6 +1208,7 @@ docker-compose logs app
 ```
 
 Erros comuns:
+
 - `.env` não configurado
 - MySQL não iniciou ainda
 - Porta 10808 em uso
@@ -1173,6 +1224,7 @@ app.db.insert-threads=20             # aumentar de 10
 ```
 
 Ou aumentar RAM do container (dockerfile):
+
 ```dockerfile
 ENV JAVA_OPTS="-Xmx2g -XX:+UseZGC"
 ```
@@ -1215,6 +1267,7 @@ spring.cache.type=caffeine  # Deve estar presente
 ```
 
 Limpar cache:
+
 ```bash
 curl -X POST http://localhost:10808/cache/clear \
   -u admin:Admin123
@@ -1239,17 +1292,17 @@ Este projeto foi ajustado para **rodar frontend e backend exclusivamente via Doc
 
 ### O que mudou
 
-* O **frontend passou a fazer parte deste repositório**, na pasta `frontend/`
-* O frontend é **buildado em Node e servido via Nginx** dentro de um container
-* O frontend **não acessa a API por IP/porta direta** — todas as chamadas são feitas para `/api/*`
-* O Nginx realiza **proxy interno** para o backend (`app:10808`) dentro da rede Docker
+- O **frontend passou a fazer parte deste repositório**, na pasta `frontend/`
+- O frontend é **buildado em Node e servido via Nginx** dentro de um container
+- O frontend **não acessa a API por IP/porta direta** — todas as chamadas são feitas para `/api/*`
+- O Nginx realiza **proxy interno** para o backend (`app:10808`) dentro da rede Docker
 
 ### Benefícios
 
-* Elimina diferenças de ambiente entre desenvolvedores
-* Remove dependência de CORS baseado em host local
-* Evita erros de autenticação e status falso de "API Offline"
-* Swagger, frontend e backend passam a usar a mesma base de URL
+- Elimina diferenças de ambiente entre desenvolvedores
+- Remove dependência de CORS baseado em host local
+- Evita erros de autenticação e status falso de "API Offline"
+- Swagger, frontend e backend passam a usar a mesma base de URL
 
 ### Arquitetura de chamadas
 
@@ -1286,12 +1339,14 @@ Por usar o nome do serviço Docker, ele funciona em qualquer máquina que utiliz
 ## 👥 Equipe DataBeats
 
 ### Time Back-End 💻
+
 - [**Ezandro Bueno**](https://github.com/ezbueno)
 - [**Jorge Filipi Dias**](https://github.com/jorgefilipi)
 - [**Wanderson Souza**](https://github.com/wandersonjafe)
 - [**Wendell Dorta**](https://github.com/Wendell-Dorta)
 
 ### Time Data Science 📊
+
 - [**André Ribeiro**](https://github.com/aluizr)
 - [**Kelly Muehlmann**](https://github.com/kellymuehlmann)
 - [**Luiz Alves**](https://github.com/lf-all)
@@ -1321,4 +1376,4 @@ Para dúvidas ou sugestões, abra uma issue no [repositório oficial](https://gi
 
 ---
 
-**Desenvolvido com ❤️ pela Equipe DataBeats | Hackathon ONE (Oracle Next Education)**
+Desenvolvido com ❤️ pela Equipe DataBeats | Hackathon ONE (Oracle Next Education)

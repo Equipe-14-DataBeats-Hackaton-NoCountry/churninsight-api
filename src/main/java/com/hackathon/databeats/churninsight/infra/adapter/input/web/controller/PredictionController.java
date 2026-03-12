@@ -2,6 +2,7 @@ package com.hackathon.databeats.churninsight.infra.adapter.input.web.controller;
 
 import com.hackathon.databeats.churninsight.application.dto.PredictionResult;
 import com.hackathon.databeats.churninsight.application.port.input.BatchProcessingUseCase;
+import com.hackathon.databeats.churninsight.application.port.input.PredictChurnUseCase;
 import com.hackathon.databeats.churninsight.application.port.input.PredictionStatsUseCase;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 import com.hackathon.databeats.churninsight.domain.rules.ChurnDiagnosisService;
@@ -61,6 +62,7 @@ import java.util.Map;
 @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 public class PredictionController {
 
+    private final PredictChurnUseCase predictChurnUseCase;
     private final PredictionStatsUseCase predictionStatsUseCase;
     private final BatchProcessingUseCase batchProcessingUseCase;
     private final ModelMetadata modelMetadata;
@@ -104,6 +106,8 @@ public class PredictionController {
         CustomerProfile profile = request.toDomain();
         log.debug("Iniciando predição - UserId: {}, IP: {}", profile.userId(), requestIp);
 
+        // Persiste a predição no histórico para alimentar métricas do dashboard.
+        predictChurnUseCase.predict(profile, requesterId, requestIp);
         PredictionResult resultado = predictionStatsUseCase.predictWithStats(profile, requesterId, requestIp);
         Map<String, Object> resposta = construirResposta(resultado, profile);
 

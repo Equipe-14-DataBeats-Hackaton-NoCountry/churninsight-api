@@ -2,6 +2,7 @@ package com.hackathon.databeats.churninsight.infra.adapter.input.web;
 
 import com.hackathon.databeats.churninsight.application.dto.PredictionResult;
 import com.hackathon.databeats.churninsight.application.port.input.BatchProcessingUseCase;
+import com.hackathon.databeats.churninsight.application.port.input.PredictChurnUseCase;
 import com.hackathon.databeats.churninsight.application.port.input.PredictionStatsUseCase;
 import com.hackathon.databeats.churninsight.domain.enums.ChurnStatus;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
@@ -87,6 +88,9 @@ class PredictionControllerIntegrationTest {
 
 	@MockitoBean
 	private PredictionStatsUseCase predictionStatsUseCase;
+
+    @MockitoBean
+    private PredictChurnUseCase predictChurnUseCase;
 
 	@MockitoBean
 	private BatchProcessingUseCase batchProcessingUseCase;

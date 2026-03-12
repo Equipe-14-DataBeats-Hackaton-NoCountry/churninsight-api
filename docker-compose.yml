@@ -6,7 +6,7 @@ services:
     container_name: churn-db
     restart: always
     ports:
-      - "3306:3306"
+      - "${DB_PORT:-3306}:3306"
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -37,6 +37,9 @@ services:
       retries: 5
 
   app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: churninsight/churn-api:local
     container_name: churn-api
     restart: on-failure

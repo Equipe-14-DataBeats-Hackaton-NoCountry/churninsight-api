@@ -33,6 +33,34 @@ const normalizeDashboardMetrics = (data) => {
   };
 };
 
+const hasMeaningfulDashboardData = (data) => {
+  if (!data) return false;
+
+  const totalCustomers = Number(data.total_customers ?? 0);
+  const churnDist = Array.isArray(data.churn_distribution) ? data.churn_distribution : [];
+  const hasDistribution = churnDist.some((v) => Number(v) > 0);
+  const hasRiskFactors = Array.isArray(data.risk_factors) && data.risk_factors.length > 0;
+
+  return totalCustomers > 0 || hasDistribution || hasRiskFactors;
+};
+
+const loadPublicMetricsFallback = async () => {
+  const res = await fetch('/metrics.json');
+  if (!res.ok) throw new Error('Falha ao carregar fallback local de métricas');
+
+  const data = await res.json();
+  return {
+    totalClients: Number(data.totalCustomers ?? 0),
+    globalChurnRate: (Number(data.churnRate ?? 0) * 100).toFixed(1),
+    highRiskCount: Number(data.churnDistribution?.[1] ?? 0),
+    revenueAtRisk: Number(data.revenueAtRisk ?? 0),
+    modelAccuracy: Number(data.auc ?? 0).toFixed(1),
+    churnDistribution: Array.isArray(data.churnDistribution) ? data.churnDistribution : [0, 0],
+    featureImportance: Array.isArray(data.featureImportance) ? data.featureImportance : [],
+    riskFactors: [],
+  };
+};
+
 export function useData() {
   const [metrics, setMetrics] = useState(null);
   const [apiStatus, setApiStatus] = useState("checking");
@@ -63,9 +91,17 @@ export function useData() {
 
       // 2) Busca o que realmente alimenta cards + gráficos
       const dashboard = await getDashboardMetrics();
-      const normalized = normalizeDashboardMetrics(dashboard);
 
-      setMetrics(normalized);
+      if (hasMeaningfulDashboardData(dashboard)) {
+        setMetrics(normalizeDashboardMetrics(dashboard));
+      } else {
+        try {
+          const fallbackMetrics = await loadPublicMetricsFallback();
+          setMetrics(fallbackMetrics);
+        } catch {
+          setMetrics(normalizeDashboardMetrics(dashboard));
+        }
+      }
     } catch (err) {
       console.error("❌ Erro useData:", err);
       setError(err?.message || "Erro ao carregar métricas");

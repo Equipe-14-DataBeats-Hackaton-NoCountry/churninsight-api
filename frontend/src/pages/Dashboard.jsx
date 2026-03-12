@@ -152,6 +152,12 @@ export default function Dashboard() {
   const isInitialLoading = (clientsLoading || metricsLoading) && apiStatus === 'checking'
   const isBackgroundRefreshing = (clientsLoading || metricsLoading) && canShowData
 
+  const hasSummaryData = canShowData && !!summary && (
+    Number(summary?.total_customers ?? 0) > 0 ||
+    (Array.isArray(summary?.churn_distribution) && summary.churn_distribution.some(v => Number(v) > 0)) ||
+    (Array.isArray(summary?.risk_factors) && summary.risk_factors.length > 0)
+  )
+
   if (isInitialLoading) {
     return (
       <div style={{ background: '#121212', color: 'white', height: '100vh', padding: '50px', textAlign: 'center' }}>
@@ -177,23 +183,29 @@ export default function Dashboard() {
   }
 
   // Cards: quando OFFLINE => "—"
-  const safeTotalCustomers = canShowData ? (summary?.total_customers ?? metrics?.totalClients ?? '—') : '—'
+  const safeTotalCustomers = canShowData
+    ? (hasSummaryData ? (summary?.total_customers ?? '—') : (metrics?.totalClients ?? '—'))
+    : '—'
 
   const safeMonitoringRate = canShowData
-    ? ((summary?.global_churn_rate ?? (metrics?.globalChurnRate !== undefined ? Number(metrics.globalChurnRate) : null)) ?? null)
+    ? (((hasSummaryData ? summary?.global_churn_rate : null) ?? (metrics?.globalChurnRate !== undefined ? Number(metrics.globalChurnRate) : null)) ?? null)
     : null
   const safeMonitoringLabel = safeMonitoringRate === null ? '—' : `${Number(safeMonitoringRate).toFixed(1)}%`
 
-  const safeCustomersAtRisk = canShowData ? (summary?.customers_at_risk ?? metrics?.highRiskCount ?? '—') : '—'
+  const safeCustomersAtRisk = canShowData
+    ? ((hasSummaryData ? summary?.customers_at_risk : null) ?? metrics?.highRiskCount ?? '—')
+    : '—'
 
-  const safeRevenueAtRisk = canShowData ? ((summary?.revenue_at_risk ?? metrics?.revenueAtRisk ?? null) ?? null) : null
+  const safeRevenueAtRisk = canShowData
+    ? (((hasSummaryData ? summary?.revenue_at_risk : null) ?? metrics?.revenueAtRisk ?? null) ?? null)
+    : null
   const safeRevenueLabel =
     safeRevenueAtRisk === null
       ? '—'
       : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(safeRevenueAtRisk)
 
   const safeModelAccuracy = canShowData
-    ? ((summary?.model_accuracy ?? null) ?? (metrics?.modelAccuracy !== undefined ? Number(metrics.modelAccuracy) : null))
+    ? (((hasSummaryData ? summary?.model_accuracy : null) ?? null) ?? (metrics?.modelAccuracy !== undefined ? Number(metrics.modelAccuracy) : null))
     : null
   const safeAccuracyLabel =
     safeModelAccuracy === null
@@ -259,13 +271,21 @@ export default function Dashboard() {
   )
 
   // Dados dos gráficos vindos do summary (backend)
-  const churnDist = Array.isArray(summary?.churn_distribution) && summary.churn_distribution.length === 2
-  ? summary.churn_distribution
-  : null
+  const churnDist = hasSummaryData
+    ? (Array.isArray(summary?.churn_distribution) && summary.churn_distribution.length === 2
+      ? summary.churn_distribution
+      : null)
+    : (Array.isArray(metrics?.churnDistribution) && metrics.churnDistribution.length === 2
+      ? metrics.churnDistribution
+      : null)
 
-    const featImportance = Array.isArray(summary?.feature_importance) && summary.feature_importance.length > 0
-    ? summary.feature_importance
-    : null
+  const featImportance = hasSummaryData
+    ? (Array.isArray(summary?.feature_importance) && summary.feature_importance.length > 0
+      ? summary.feature_importance
+      : null)
+    : (Array.isArray(metrics?.featureImportance) && metrics.featureImportance.length > 0
+      ? metrics.featureImportance
+      : null)
 
   return (
     <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Circular, sans-serif' }}>
