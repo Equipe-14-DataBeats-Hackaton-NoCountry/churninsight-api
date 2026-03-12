@@ -290,6 +290,39 @@ export const getHighRiskClients = async (page = 0, size = 10) => {
   }
 };
 
+export const getPrioritizedRetention = async (page = 0, size = 20) => {
+  return fetchWithAuth(`/retention/prioritized?page=${page}&size=${size}`)
+}
+
+export const createRetentionAction = async (payload) => {
+  return fetchWithAuth('/retention/actions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export const updateRetentionActionStatus = async (actionId, status) => {
+  return fetchWithAuth(`/retention/actions/${actionId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export const createRetentionOutcome = async (actionId, payload) => {
+  return fetchWithAuth(`/retention/actions/${actionId}/outcome`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export const getRetentionKpis = async (from, to) => {
+  const q = new URLSearchParams()
+  if (from) q.append('from', from)
+  if (to) q.append('to', to)
+  const query = q.toString()
+  return fetchWithAuth(query ? `/retention/kpis?${query}` : '/retention/kpis')
+}
+
 // =============================================================================
 // Prediction Endpoints
 // =============================================================================
@@ -427,6 +460,11 @@ export default {
   getTotalCount,
   getStatistics,
   getHighRiskClients,
+  getPrioritizedRetention,
+  createRetentionAction,
+  updateRetentionActionStatus,
+  createRetentionOutcome,
+  getRetentionKpis,
   predictChurn,
   getStats,
   uploadBatchFile,

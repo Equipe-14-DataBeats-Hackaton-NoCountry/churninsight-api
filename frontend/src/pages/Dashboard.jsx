@@ -11,6 +11,7 @@ import { DashboardSummaryCards } from './dashboard/DashboardSummaryCards'
 import { DashboardOverviewTab } from './dashboard/DashboardOverviewTab'
 import { riskActionsByFactor } from './dashboard/riskActions'
 import { translateFeature } from '../utils/featureLabels'
+import { RetentionOperations } from '../components/RetentionOperations'
 
 export default function Dashboard() {
   const { clients, loading: clientsLoading, error: clientsError, refresh: refreshClients } = useClients()
@@ -339,6 +340,15 @@ export default function Dashboard() {
         >
           <Search size={18} /> Buscar Cliente
         </button>
+
+        <button
+          onClick={() => canShowData && setActiveTab('retention')}
+          style={tabStyle(activeTab === 'retention', !canShowData)}
+          disabled={!canShowData}
+          title={!canShowData ? "Disponível apenas com API ONLINE" : ""}
+        >
+          <Activity size={18} /> Operações de Retenção
+        </button>
       </div>
 
       {activeTab === 'dashboard' && (
@@ -383,6 +393,14 @@ export default function Dashboard() {
         </motion.div>
       ) : (
         <OfflineScreen title="Buscar Cliente" />
+      ))}
+
+      {activeTab === 'retention' && (canShowData ? (
+        <motion.div key="retention" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <RetentionOperations />
+        </motion.div>
+      ) : (
+        <OfflineScreen title="Operações de Retenção" />
       ))}
 
     </div>
