@@ -79,8 +79,8 @@ public class DashboardMetricsService {
      * Repo retorna (na ordem): free+ads, skipHigh, frustHigh, premiumNoOffline, lowListeningTime
      */
     private List<RiskFactorItem> buildRiskFactors(long totalCustomers) {
-        Object[] raw = predictionHistoryRepository.getRiskFactorCounts();
-        if (raw == null || raw.length < 5) return List.of();
+        Object[] raw = normalizeAggregateTuple(predictionHistoryRepository.getRiskFactorCounts(), 5);
+        if (raw == null) return List.of();
 
         Map<String, Long> counts = new LinkedHashMap<>();
         counts.put("Anúncios por Semana", safeLong(raw[0]));
@@ -101,6 +101,22 @@ public class DashboardMetricsService {
                         .percentage(round((e.getValue() * 100.0) / denom))
                         .build())
                 .toList();
+    }
+
+    /**
+     * Alguns providers/JPA podem devolver a tupla agregada "aninhada" em uma posição.
+     * Este helper normaliza para um array linear previsível.
+     */
+    private Object[] normalizeAggregateTuple(Object[] raw, int expectedSize) {
+        if (raw == null) return null;
+
+        if (raw.length >= expectedSize) return raw;
+
+        if (raw.length == 1 && raw[0] instanceof Object[] nested && nested.length >= expectedSize) {
+            return nested;
+        }
+
+        return null;
     }
 
     /**

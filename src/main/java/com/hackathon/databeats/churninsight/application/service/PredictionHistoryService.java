@@ -181,8 +181,8 @@ public class PredictionHistoryService {
         }
 
         // Risk factor counts
-        Object[] risks = repository.getRiskFactorCounts();
-        if (risks != null && risks.length == 5) {
+        Object[] risks = normalizeAggregateTuple(repository.getRiskFactorCounts(), 5);
+        if (risks != null) {
             Map<String, Long> riskMap = new HashMap<>();
             riskMap.put("FREE_HIGH_ADS", ((Number) risks[0]).longValue());
             riskMap.put("HIGH_SKIP_RATE", ((Number) risks[1]).longValue());
@@ -252,6 +252,18 @@ public class PredictionHistoryService {
                 .primaryRiskFactor(primaryRisk)
                 .createdAt(entity.getCreatedAt())
                 .build();
+    }
+
+    private Object[] normalizeAggregateTuple(Object[] raw, int expectedSize) {
+        if (raw == null) return null;
+
+        if (raw.length >= expectedSize) return raw;
+
+        if (raw.length == 1 && raw[0] instanceof Object[] nested && nested.length >= expectedSize) {
+            return nested;
+        }
+
+        return null;
     }
 
     private String identifyPrimaryRiskFactor(PredictionHistoryEntity entity) {
