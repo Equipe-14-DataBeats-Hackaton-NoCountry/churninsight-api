@@ -372,6 +372,35 @@ O modelo ONNX foi treinado com as seguintes características:
 
 ---
 
+## 🧾 Convenção de Commits
+
+Para manter o histórico consistente, use mensagens em português no formato Conventional Commits:
+
+```text
+tipo(escopo-opcional): resumo curto no imperativo
+```
+
+Exemplos:
+
+```text
+feat(retencao): adiciona endpoint de KPIs operacionais
+fix(dashboard): corrige agregacao de fatores de risco
+docs(readme): atualiza instrucoes de setup local
+refactor(api): simplifica mapeamento de DTOs
+chore(ci): ajusta pipeline de build e testes
+```
+
+Tipos recomendados: `feat`, `fix`, `docs`, `refactor`, `style`, `test`, `chore`, `build`, `ci`, `perf`, `revert`.
+
+Boas praticas:
+
+- Escreva o resumo com ate 72 caracteres.
+- Use verbo no imperativo (`adiciona`, `corrige`, `atualiza`).
+- Evite mensagens genericas como `ajustes` ou `update`.
+- Quando necessario, detalhe contexto no corpo do commit.
+
+---
+
 ## ⚙️ Configuração e Execução
 
 ### Pré-requisitos
