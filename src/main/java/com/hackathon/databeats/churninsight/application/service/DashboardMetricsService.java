@@ -7,6 +7,7 @@ import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.Dashboar
 import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository.PredictionHistoryRepository;
 import com.hackathon.databeats.churninsight.infra.util.ModelMetadata;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -19,6 +20,9 @@ public class DashboardMetricsService {
 
     private final PredictionHistoryRepository predictionHistoryRepository;
     private final ModelMetadata modelMetadata;
+
+        @Value("${dashboard.include-legacy-churn-distribution:true}")
+        private boolean includeLegacyChurnDistribution;
 
     public DashboardMetricsResponse getMetrics() {
         // 1 - Total de clientes (fonte única: histórico persistido)
@@ -45,16 +49,30 @@ public class DashboardMetricsService {
         // 7 - Feature importance (proxy baseado em frequência dos fatores)
         List<FeatureImportanceItem> featureImportance = buildFeatureImportanceFromRiskFactors(riskFactors);
 
-        return DashboardMetricsResponse.builder()
+                DashboardMetricsResponse.DashboardMetricsResponseBuilder responseBuilder = DashboardMetricsResponse.builder()
                 .totalCustomers(totalCustomers)
                 .customersAtRisk(customersAtRisk)
                 .globalChurnRate(round(monitoringRate))
                 .revenueAtRisk(round2(revenueAtRisk))
                 .modelAccuracy(modelAccuracy)
                 .riskFactors(riskFactors)
-                .featureImportance(featureImportance)
-                .build();
+                                .featureImportance(featureImportance);
+
+                if (includeLegacyChurnDistribution) {
+                        responseBuilder.churnDistribution(buildChurnDistribution());
+                }
+
+                return responseBuilder.build();
     }
+
+        /**
+         * Campo legado para compatibilidade temporaria: [willStay, willChurn]
+         */
+        private List<Long> buildChurnDistribution() {
+                long willChurn = predictionHistoryRepository.countByChurnStatus(ChurnStatus.WILL_CHURN);
+                long willStay = predictionHistoryRepository.countByChurnStatus(ChurnStatus.WILL_STAY);
+                return List.of(willStay, willChurn);
+        }
 
     /**
      * Fatores de risco: usa query agregada já existente no repo.

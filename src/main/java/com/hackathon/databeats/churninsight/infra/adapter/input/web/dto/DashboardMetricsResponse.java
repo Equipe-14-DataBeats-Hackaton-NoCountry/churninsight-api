@@ -1,5 +1,6 @@
 package com.hackathon.databeats.churninsight.infra.adapter.input.web.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
@@ -23,6 +24,13 @@ public class DashboardMetricsResponse {
 
     @JsonProperty("model_accuracy")
     private double modelAccuracy;   // 0..1 (ex: 0.6488)
+
+    /**
+     * Campo legado para compatibilidade temporaria: [willStay, willChurn]
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("churn_distribution")
+    private List<Long> churnDistribution;
 
     /**
      * Lista consolidada de fatores de risco (top N)
