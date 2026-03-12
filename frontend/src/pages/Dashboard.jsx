@@ -270,14 +270,17 @@ export default function Dashboard() {
     </div>
   )
 
-  // Dados dos gráficos vindos do summary (backend)
-  const churnDist = hasSummaryData
-    ? (Array.isArray(summary?.churn_distribution) && summary.churn_distribution.length === 2
-      ? summary.churn_distribution
-      : null)
-    : (Array.isArray(metrics?.churnDistribution) && metrics.churnDistribution.length === 2
-      ? metrics.churnDistribution
-      : null)
+  const totalBase = canShowData
+    ? Number((hasSummaryData ? summary?.total_customers : null) ?? metrics?.totalClients ?? 0)
+    : 0
+
+  const customersForAction = canShowData
+    ? Number((hasSummaryData ? summary?.customers_at_risk : null) ?? metrics?.highRiskCount ?? 0)
+    : 0
+
+  const actionBaseDistribution = totalBase > 0
+    ? [Math.max(totalBase - customersForAction, 0), customersForAction]
+    : null
 
   const featImportance = hasSummaryData
     ? (Array.isArray(summary?.feature_importance) && summary.feature_importance.length > 0
@@ -340,15 +343,16 @@ export default function Dashboard() {
       {/* CARDS */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '24px',
-        marginBottom: '16px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '16px',
+        marginBottom: '20px',
+        alignItems: 'stretch'
       }}>
-        <MetricCard title="Total de Clientes" value={safeTotalCustomers} />
-        <MetricCard title="Clientes Prioritários para Ação" value={safeMonitoringLabel} subtitle="Top 25% da base com maior instabilidade" />
-        <MetricCard title="Clientes em Risco" value={safeCustomersAtRisk} />
-        <MetricCard title="Receita Potencial em Risco (Est.)" value={safeRevenueLabel} />
-        <MetricCard title="Precisão do Modelo" value={safeAccuracyLabel} />
+        <MetricCard title="Total de Clientes" value={safeTotalCustomers} tone="neutral" />
+        <MetricCard title="Clientes Prioritários para Ação" value={safeMonitoringLabel} subtitle="Top 25% da base com maior instabilidade" tone="warning" />
+        <MetricCard title="Clientes em Risco" value={safeCustomersAtRisk} subtitle="Quantidade em observação imediata" tone="danger" />
+        <MetricCard title="Receita Potencial em Risco (Est.)" value={safeRevenueLabel} subtitle="Estimativa financeira da carteira sensível" tone="revenue" />
+        <MetricCard title="Precisão do Modelo" value={safeAccuracyLabel} subtitle="Indicador técnico do modelo atual" tone="info" />
       </div>
 
       {/* NOTA EXPLICATIVA */}
@@ -360,9 +364,9 @@ export default function Dashboard() {
           padding: '12px',
           background: '#1a1a1a',
           borderRadius: '6px',
-          borderLeft: '3px solid #1DB954'
+          borderLeft: '3px solid #f59e0b'
         }}>
-          <strong>Nota:</strong> O gráfico "Distribuição da Classificação do Modelo" mostra toda a base. Já o indicador "Clientes Prioritários para Ação" destaca os 25% que precisam de atenção imediata.
+          <strong>Nota:</strong> O gráfico principal segmenta a base entre clientes estáveis e clientes que exigem ação imediata. Assim, a leitura visual fica alinhada com o critério operacional usado no restante do dashboard.
         </div>
       )}
 
@@ -414,19 +418,24 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
             <div style={{ background: '#242424', padding: '30px', borderRadius: '8px' }}>
               <h3 style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Activity size={20} color="#1DB954" />
-                Distribuição da Classificação do Modelo
+                <AlertTriangle size={20} color="#f59e0b" />
+                Segmentação Operacional da Base
               </h3>
 
                 {!canShowData ? (
                 <OfflineBlock text="Dados indisponíveis (API Offline)" />
-                ) : !churnDist ? (
+                ) : !actionBaseDistribution ? (
                 <OfflineBlock
-                    text="Sem dados de distribuição disponíveis no momento.\n(O backend ainda não forneceu churn_distribution.)"
+                    text="Sem dados de segmentação disponíveis no momento."
                 />
                 ) : (
                 <div style={{ height: '350px' }}>
-                    <ChurnDistributionChart data={churnDist} />
+                    <ChurnDistributionChart
+                      data={actionBaseDistribution}
+                      labels={['Base estável', 'Prioridade de ação']}
+                      colors={['#475569', '#f59e0b']}
+                      hoverColors={['#64748b', '#fbbf24']}
+                    />
                 </div>
                 )}
             </div>
@@ -468,7 +477,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
             <div style={{ background: '#242424', padding: '30px', borderRadius: '8px' }}>
               <h3 style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <AlertTriangle size={20} color="#ffcc00" />
+                        <AlertTriangle size={20} color="#f59e0b" />
                 Principais Fatores de Risco
               </h3>
               <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: '15px' }}>
@@ -496,14 +505,14 @@ export default function Dashboard() {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          border: motivo === selectedRiskFactor ? '1px solid #1DB954' : 'none'
+                          border: motivo === selectedRiskFactor ? '1px solid #f59e0b' : 'none'
                         }}
                       >
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, color: '#b3b3b3', fontSize: '0.9rem' }}>{motivo}</p>
                           <h4 style={{ margin: 0, color: '#fff', fontSize: '1.2rem' }}>{qtd} usuários</h4>
                         </div>
-                        <div style={{ color: '#1DB954', fontSize: '1.5rem' }}>
+                        <div style={{ color: '#f59e0b', fontSize: '1.5rem' }}>
                           {totalRisco > 0 ? ((qtd / totalRisco) * 100).toFixed(1) : '0.0'}%
                         </div>
                       </motion.div>

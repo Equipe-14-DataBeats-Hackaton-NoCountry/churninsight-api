@@ -15,11 +15,11 @@ Este playbook cobre o caminho:
 ## 2. Repositorios Envolvidos
 
 1. Data Science (Colab):
-   - https://github.com/Equipe-14-DataBeats-Hackaton-NoCountry/Hackathon-ONE---Churn-clientes
+   - [Hackathon-ONE---Churn-clientes](https://github.com/Equipe-14-DataBeats-Hackaton-NoCountry/Hackathon-ONE---Churn-clientes)
 2. API (este repositorio):
    - churninsight-api
-3. Frontend (quando aplicavel):
-   - repositorio frontend do projeto
+3. Frontend (neste repositorio):
+   - pasta `frontend/`
 
 ## 3. Artefatos Obrigatorios do Colab
 
@@ -43,8 +43,16 @@ Copiar os artefatos para estes caminhos no repositorio da API:
 3. `src/main/resources/contrato_api.json` (se houver mudanca de contrato)
 4. `src/main/resources/clients.json` (se houver massa inicial)
 
+Sincronizar tambem as copias usadas pelo frontend:
+
+1. `frontend/modelo_hackathon.onnx`
+2. `frontend/metadata.json`
+3. `frontend/contrato_api.json` (se houver mudanca de contrato)
+4. `frontend/public/clients.json` (se houver massa inicial)
+
 Observacao:
 Manter os mesmos nomes evita retrabalho em configuracao.
+Backend e frontend devem permanecer com os mesmos arquivos para evitar divergencia entre API e interface.
 
 ## 5. Subida Local da Stack
 
@@ -68,6 +76,9 @@ Executar na sequencia:
    - `POST /predict` com payload valido
 3. Dashboard
    - `GET /dashboard/metrics`
+4. Frontend
+   - `GET /clients.json`
+   - `GET /metadata.json`
 
 Se o dashboard estiver zerado, popular historico com carga de `POST /predict`.
 
@@ -104,10 +115,11 @@ Conclusao:
 Antes de abrir PR da API:
 
 1. Atualizou ONNX e metadata
-2. Subiu stack local sem erro
-3. Validou `/predict` e `/dashboard/metrics`
-4. Registrou versao do modelo no corpo do PR
-5. Anexou evidencias (comandos e respostas chave)
+2. Sincronizou as copias equivalentes no frontend
+3. Subiu stack local sem erro
+4. Validou `/predict`, `/dashboard/metrics` e os assets estaticos do frontend
+5. Registrou versao do modelo no corpo do PR
+6. Anexou evidencias (comandos e respostas chave)
 
 ## 10. Troubleshooting Rapido
 

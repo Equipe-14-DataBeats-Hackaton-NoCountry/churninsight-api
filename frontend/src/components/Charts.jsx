@@ -45,22 +45,27 @@ const traducaoFeatures = {
 };
 
 // --- GRÁFICO DE PIZZA (CHURN) ---
-export function ChurnDistributionChart({ data }) {
+export function ChurnDistributionChart({
+  data,
+  labels = ['Fidelizados', 'Churn'],
+  colors = ['#1DB954', '#717171ff'],
+  hoverColors = ['#1ed760', '#919090ff'],
+}) {
   if (!data || !Array.isArray(data)) return null;
   const total = data.reduce((a, b) => a + b, 0);
 
   const chartData = {
-    labels: ['Fidelizados', 'Churn'],
+    labels,
     datasets: [{
       data: data,
-      backgroundColor: ['#1DB954', '#717171ff'], 
+      backgroundColor: colors,
       borderColor: 'transparent',
       borderWidth: 0,
       // Efeito de fatia separada (Explodido)
       offset: [0, 30], 
       // Destaque adicional ao passar o mouse
       hoverOffset: 50,
-      hoverBackgroundColor: ['#1ed760', '#919090ff'],
+      hoverBackgroundColor: hoverColors,
     }],
   };
 
@@ -105,6 +110,8 @@ export function ChurnDistributionChart({ data }) {
 export function FeatureImportanceChart({ data }) {
   if (!data || !Array.isArray(data)) return null;
 
+  const barPalette = ['#38bdf8', '#60a5fa', '#f59e0b', '#f97316', '#ef4444', '#eab308', '#14b8a6', '#a855f7', '#fb7185', '#84cc16'];
+
   const chartData = {
     labels: data.map(f => {
       const nomeLimpo = f.name.replace(/^num__/, "").replace(/^cat__/, "");
@@ -113,9 +120,9 @@ export function FeatureImportanceChart({ data }) {
     datasets: [{
       label: 'Impacto no Modelo',
       data: data.map(f => f.value),
-      backgroundColor: '#1DB954',
+      backgroundColor: data.map((_, index) => barPalette[index % barPalette.length]),
       borderRadius: 4,
-      hoverBackgroundColor: '#1ed760',
+      hoverBackgroundColor: data.map((_, index) => barPalette[index % barPalette.length]),
       hoverBorderColor: '#ffffff',
       hoverBorderWidth: 1,
     }],
