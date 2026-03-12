@@ -2,12 +2,12 @@
     "name": "Spotify Churn Model",
     "version": "1.0",
     "model_type": "Logistic Regression with SMOTE",
-    "accuracy": 0.5094,
-    "recall": 0.5,
-    "precision": 0.2637,
-    "f1_score": 0.3453,
-    "auc_roc": 0.5024,
-    "threshold_otimo": 0.431019,
+    "accuracy": 0.6488,
+    "recall": 0.3043,
+    "precision": 0.315,
+    "f1_score": 0.3096,
+    "auc_roc": 0.544,
+    "threshold_otimo": 0.262755,
     "numeric_features": [
         "age",
         "listening_time",
@@ -27,5 +27,5 @@
         "subscription_type",
         "device_type"
     ],
-    "export_date": "2025-12-31 12:40:51"
+    "export_date": "2026-03-12 17:53:59"
 }
