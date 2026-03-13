@@ -169,6 +169,10 @@ public class DashboardMetricsService {
         );
 
         List<Object[]> top25ByPlan = predictionHistoryQueryPort.getTop25SubscriptionCounts();
+        
+        if (top25ByPlan == null || top25ByPlan.isEmpty()) {
+            return 0.0;
+        }
 
         return top25ByPlan.stream()
                 .mapToDouble(row -> {

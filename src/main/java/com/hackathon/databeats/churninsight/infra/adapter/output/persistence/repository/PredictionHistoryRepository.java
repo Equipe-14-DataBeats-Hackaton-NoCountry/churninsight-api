@@ -113,7 +113,7 @@ public interface PredictionHistoryRepository extends
                  * Retorna pares [subscription_type, count].
                  */
                 @Query(value = """
-                SELECT ranked.subscription_type, COUNT(*)
+                SELECT ranked.subscription_type, COUNT(*) as count
                 FROM (
                         SELECT subscription_type,
                                                  ROW_NUMBER() OVER (ORDER BY probability DESC) as row_num,
@@ -122,6 +122,7 @@ public interface PredictionHistoryRepository extends
                 ) ranked
                 WHERE ranked.row_num <= CEIL(ranked.total_count * 0.25)
                 GROUP BY ranked.subscription_type
+                ORDER BY count DESC
                 """, nativeQuery = true)
                 List<Object[]> getTop25SubscriptionCounts();
 }

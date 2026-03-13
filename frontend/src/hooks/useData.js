@@ -117,6 +117,5 @@ export function useData() {
     fetchData();
   }, []);
 
-  return { metrics, apiStatus, loading, error, refresh: fetchData };
   return { metrics, apiStatus, loading, error, refresh: fetchData, fallbackActive };
 }
