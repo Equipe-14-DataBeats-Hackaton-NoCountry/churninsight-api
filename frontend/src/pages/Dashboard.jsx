@@ -15,7 +15,7 @@ import { RetentionOperations } from '../components/RetentionOperations'
 
 export default function Dashboard() {
   const { clients, loading: clientsLoading, error: clientsError, refresh: refreshClients } = useClients()
-  const { metrics, apiStatus, loading: metricsLoading, refresh: refreshMetrics } = useData()
+  const { metrics, apiStatus, loading: metricsLoading, refresh: refreshMetrics, fallbackActive } = useData()
 
   const [selectedClientId, setSelectedClientId] = useState(null)
   const [selectedRiskFactor, setSelectedRiskFactor] = useState("")
@@ -141,6 +141,14 @@ export default function Dashboard() {
   }
 
   // Cards: quando OFFLINE => "—"
+    // Fallback warning
+    const fallbackWarning = fallbackActive ? (
+      <div style={{ background: '#242424', color: '#f59e0b', padding: '16px', borderRadius: '8px', marginBottom: '18px', textAlign: 'center', fontWeight: 'bold', fontSize: '1.1rem' }}>
+        ⚠️ Dados carregados do fallback local.<br />
+        As métricas podem estar desatualizadas ou incompletas.<br />
+        Verifique a conexão com a API para dados em tempo real.
+      </div>
+    ) : null
   const safeTotalCustomers = canShowData
     ? (hasSummaryData ? (summary?.total_customers ?? '—') : (metrics?.totalClients ?? '—'))
     : '—'
@@ -250,6 +258,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Circular, sans-serif' }}>
+      {fallbackWarning}
       {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

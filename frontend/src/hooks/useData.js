@@ -64,10 +64,12 @@ export function useData() {
   const [apiStatus, setApiStatus] = useState("checking");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [fallbackActive, setFallbackActive] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
+    setFallbackActive(false);
 
     try {
       // 1) Health check: ONLINE só se status === "UP"
@@ -96,8 +98,10 @@ export function useData() {
         try {
           const fallbackMetrics = await loadPublicMetricsFallback();
           setMetrics(fallbackMetrics);
+          setFallbackActive(true);
         } catch {
           setMetrics(normalizeDashboardMetrics(dashboard));
+          setFallbackActive(true);
         }
       }
     } catch (err) {
@@ -114,4 +118,5 @@ export function useData() {
   }, []);
 
   return { metrics, apiStatus, loading, error, refresh: fetchData };
+  return { metrics, apiStatus, loading, error, refresh: fetchData, fallbackActive };
 }

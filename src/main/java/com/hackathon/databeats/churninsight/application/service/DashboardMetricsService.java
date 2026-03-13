@@ -26,43 +26,56 @@ public class DashboardMetricsService {
 
     public DashboardMetricsResponse getMetrics() {
         // 1 - Total de clientes (fonte única: histórico persistido)
-        long totalCustomers = predictionHistoryQueryPort.count();
+        long totalCustomers = Math.max(0L, predictionHistoryQueryPort.count());
 
         // 2 - Clientes em risco (TOP 25% por probabilidade)  -> regra Mariana
         Long customersAtRisk = predictionHistoryQueryPort.countTop25AtRisk();
-        if (customersAtRisk == null) customersAtRisk = 0L;
+        if (customersAtRisk == null || customersAtRisk < 0) customersAtRisk = 0L;
 
         // 3 - Clientes em monitoramento (%) = TOP 25% (não é WILL_CHURN)
         double monitoringRate = totalCustomers > 0
-                ? (customersAtRisk * 100.0) / totalCustomers
-                : 0.0;
+            ? Math.max(0.0, (customersAtRisk * 100.0) / totalCustomers)
+            : 0.0;
 
         // 4 - Receita em risco (alinhada com o mesmo critério do TOP 25%)
-        double revenueAtRisk = this.calculateRevenueAtRisk();
+        double revenueAtRisk = Math.max(0.0, this.calculateRevenueAtRisk());
 
         // 5 - Precisão do modelo (0..1)
-        double modelAccuracy = modelMetadataPort.getAcuracia();
+        double modelAccuracy = Math.max(0.0, modelMetadataPort.getAcuracia());
 
         // 6 - Principais fatores (consolidado no backend)
         List<RiskFactorItem> riskFactors = buildRiskFactors(totalCustomers);
+        if (riskFactors == null || riskFactors.isEmpty()) {
+            riskFactors = List.of(RiskFactorItem.builder()
+            .name("Dados insuficientes para análise de risco")
+            .count(0L)
+            .percentage(0.0)
+            .build());
+        }
 
         // 7 - Feature importance (proxy baseado em frequência dos fatores)
         List<FeatureImportanceItem> featureImportance = buildFeatureImportanceFromRiskFactors(riskFactors);
+        if (featureImportance == null || featureImportance.isEmpty()) {
+            featureImportance = List.of(FeatureImportanceItem.builder()
+            .name("Sem fatores de risco detectados")
+            .value(1.0)
+            .build());
+        }
 
-                DashboardMetricsResponse.DashboardMetricsResponseBuilder responseBuilder = DashboardMetricsResponse.builder()
-                .totalCustomers(totalCustomers)
-                .customersAtRisk(customersAtRisk)
-                .globalChurnRate(round(monitoringRate))
-                .revenueAtRisk(round2(revenueAtRisk))
-                .modelAccuracy(modelAccuracy)
-                .riskFactors(riskFactors)
-                                .featureImportance(featureImportance);
+        DashboardMetricsResponse.DashboardMetricsResponseBuilder responseBuilder = DashboardMetricsResponse.builder()
+            .totalCustomers(totalCustomers)
+            .customersAtRisk(customersAtRisk)
+            .globalChurnRate(round(monitoringRate))
+            .revenueAtRisk(round2(revenueAtRisk))
+            .modelAccuracy(modelAccuracy)
+            .riskFactors(riskFactors)
+            .featureImportance(featureImportance);
 
-                if (includeLegacyChurnDistribution) {
-                        responseBuilder.churnDistribution(buildChurnDistribution());
-                }
+        if (includeLegacyChurnDistribution) {
+            responseBuilder.churnDistribution(buildChurnDistribution());
+        }
 
-                return responseBuilder.build();
+        return responseBuilder.build();
     }
 
         /**
@@ -80,27 +93,26 @@ public class DashboardMetricsService {
      */
     private List<RiskFactorItem> buildRiskFactors(long totalCustomers) {
         Object[] raw = normalizeAggregateTuple(predictionHistoryQueryPort.getRiskFactorCounts(), 5);
-        if (raw == null) return List.of();
-
         Map<String, Long> counts = new LinkedHashMap<>();
-        counts.put("Anúncios por Semana", safeLong(raw[0]));
-        counts.put("Taxa de Pulos Elevada", safeLong(raw[1]));
-        counts.put("Índice de Frustração Alto", safeLong(raw[2]));
-        counts.put("Subutilização Premium", safeLong(raw[3]));
-        counts.put("Tempo de Escuta Baixo", safeLong(raw[4]));
-
+        if (raw != null) {
+            counts.put("Anúncios por Semana", safeLong(raw[0]));
+            counts.put("Taxa de Pulos Elevada", safeLong(raw[1]));
+            counts.put("Índice de Frustração Alto", safeLong(raw[2]));
+            counts.put("Subutilização Premium", safeLong(raw[3]));
+            counts.put("Tempo de Escuta Baixo", safeLong(raw[4]));
+        }
         long denom = Math.max(1, totalCustomers);
-
-        return counts.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
-                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
-                .limit(10)
-                .map(e -> RiskFactorItem.builder()
-                        .name(e.getKey())
-                        .count(e.getValue())
-                        .percentage(round((e.getValue() * 100.0) / denom))
-                        .build())
-                .toList();
+        List<RiskFactorItem> result = counts.entrySet().stream()
+            .filter(e -> e.getValue() > 0)
+            .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+            .limit(10)
+            .map(e -> RiskFactorItem.builder()
+                .name(e.getKey())
+                .count(e.getValue())
+                .percentage(round((e.getValue() * 100.0) / denom))
+                .build())
+            .toList();
+        return result;
     }
 
     /**
@@ -123,17 +135,25 @@ public class DashboardMetricsService {
      * Proxy para o gráfico: normaliza pela soma dos fatores (0..1).
      */
     private List<FeatureImportanceItem> buildFeatureImportanceFromRiskFactors(List<RiskFactorItem> riskFactors) {
-        if (riskFactors == null || riskFactors.isEmpty()) return List.of();
-
+        if (riskFactors == null || riskFactors.isEmpty()) {
+            return List.of(FeatureImportanceItem.builder()
+                .name("Sem fatores de risco detectados")
+                .value(1.0)
+                .build());
+        }
         long sum = riskFactors.stream().mapToLong(RiskFactorItem::getCount).sum();
-        if (sum <= 0) return List.of();
-
+        if (sum <= 0) {
+            return List.of(FeatureImportanceItem.builder()
+                .name("Sem fatores de risco detectados")
+                .value(1.0)
+                .build());
+        }
         return riskFactors.stream()
-                .map(rf -> FeatureImportanceItem.builder()
-                        .name(rf.getName())
-                        .value((double) rf.getCount() / (double) sum)
-                        .build())
-                .toList();
+            .map(rf -> FeatureImportanceItem.builder()
+                .name(rf.getName())
+                .value((double) rf.getCount() / (double) sum)
+                .build())
+            .toList();
     }
 
     /**
