@@ -332,7 +332,18 @@ public class PredictionController {
 
         // Diagnóstico (já existe)
         Map<String, String> diagnosis = ChurnDiagnosisService.gerarDiagnostico(
-                profile, prob, threshold
+            profile, prob, threshold
+        );
+
+        // Garantir campos de diagnóstico sempre preenchidos
+        String primaryRiskFactor = diagnosis.getOrDefault("primary_risk_factor", "Nenhum fator de risco relevante identificado");
+        String primaryRetentionFactor = diagnosis.getOrDefault("primary_retention_factor", profile.offlineListening() ? "Uso Offline" : "Nenhum fator relevante identificado");
+        String suggestedAction = diagnosis.getOrDefault("suggested_action", "Sem recomendação disponível");
+
+        Map<String, String> safeDiagnosis = Map.of(
+            "primary_risk_factor", primaryRiskFactor,
+            "primary_retention_factor", primaryRetentionFactor,
+            "suggested_action", suggestedAction
         );
 
         // Nível de risco por faixa (baseado na probabilidade)
@@ -363,7 +374,7 @@ public class PredictionController {
         response.put("risk_level", riskLevel);
         response.put("risk_message", riskMessage);
 
-        response.put("ai_diagnosis", diagnosis);
+        response.put("ai_diagnosis", safeDiagnosis);
 
         return response;
     }

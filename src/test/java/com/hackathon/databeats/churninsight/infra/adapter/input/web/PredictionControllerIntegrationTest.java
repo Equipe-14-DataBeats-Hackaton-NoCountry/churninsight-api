@@ -151,9 +151,10 @@ class PredictionControllerIntegrationTest {
         String requestBody = createProfileWithInvalidAgeJson();
 
         mockMvc.perform(post("/predict")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest());
+                .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(requestBody))
+            )
+            .andExpect(status().isBadRequest());
     }
 
     /**
@@ -166,9 +167,10 @@ class PredictionControllerIntegrationTest {
         String requestBody = createProfileWithInvalidSkipRateJson();
 
         mockMvc.perform(post("/predict")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest());
+                .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(requestBody))
+            )
+            .andExpect(status().isBadRequest());
     }
 
     /**
@@ -228,9 +230,10 @@ class PredictionControllerIntegrationTest {
         String requestBody = createValidProfileJson();
 
         mockMvc.perform(post("/predict")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isUnauthorized());
+                .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(requestBody))
+            )
+            .andExpect(status().isUnauthorized());
     }
 
     /**
