@@ -18,8 +18,8 @@ import java.util.List;
  * @version 1.0.0
  */
 @Data
-public class ModelMetadata implements ModelMetadataPort {
 @JsonIgnoreProperties(ignoreUnknown = true)
+public class ModelMetadata implements ModelMetadataPort {
 
     /** Nome identificador do modelo. */
     private String name;
@@ -34,13 +34,17 @@ public class ModelMetadata implements ModelMetadataPort {
     @JsonProperty(value = "f1_score")
     private double f1Score;
 
-    /** Lista de features numéricas esperadas pelo modelo. */
-    @JsonProperty(value = "numeric_features")
-    private List<String> numericFeatures;
+    @JsonProperty(value = "features")
+    private List<String> features;
 
-    /** Lista de features categóricas esperadas pelo modelo. */
-    @JsonProperty(value = "categorical_features")
-    private List<String> categoricalFeatures;
+    // Métodos utilitários para manter compatibilidade com a interface ModelMetadataPort
+    public List<String> getNumericFeatures() {
+        return features != null ? features : List.of();
+    }
+
+    public List<String> getCategoricalFeatures() {
+        return features != null ? features : List.of();
+    }
 
     /** Threshold genérico do modelo (campo extra do JSON). */
     @JsonProperty(value = "threshold")
