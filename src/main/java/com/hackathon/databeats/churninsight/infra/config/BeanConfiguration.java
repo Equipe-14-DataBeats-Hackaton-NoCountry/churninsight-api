@@ -77,17 +77,6 @@ public class BeanConfiguration {
     }
 
     /**
-     * Expõe ModelMetadata como port para a camada de aplicação.
-     *
-     * @param metadata instância concreta de ModelMetadata
-     * @return interface ModelMetadataPort para injeção de dependência
-     */
-    @Bean
-    public ModelMetadataPort modelMetadataPort(ModelMetadata metadata) {
-        return metadata;
-    }
-
-    /**
      * Cria o adapter ONNX para inferência do modelo de ML, envolvendo-o em um adaptador de execução
      * para gerenciamento de threads e métricas.
      *

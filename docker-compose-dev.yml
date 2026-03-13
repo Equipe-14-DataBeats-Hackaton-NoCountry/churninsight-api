@@ -106,21 +106,16 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: monitoring-prometheus
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - sed -e "s|__PROM_SCRAPE_USER__|$$PROM_SCRAPE_USER|g" -e "s|__PROM_SCRAPE_PASSWORD__|$$PROM_SCRAPE_PASSWORD|g" -e "s|__APP_PORT__|$${PROM_TARGET_PORT:-10808}|g" /etc/prometheus/prometheus.yml > /tmp/prometheus.yml && exec /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles
     env_file:
       - .env
     environment:
       PROM_SCRAPE_USER: ${SECURITY_USER:-admin}
       PROM_SCRAPE_PASSWORD: ${SECURITY_PASSWORD:-admin}
       PROM_TARGET_PORT: ${APP_PORT:-10808}
-    command:
-      - /bin/sh
-      - -c
-      - |
-        sed -e "s|__PROM_SCRAPE_USER__|$$PROM_SCRAPE_USER|g" \
-            -e "s|__PROM_SCRAPE_PASSWORD__|$$PROM_SCRAPE_PASSWORD|g" \
-            -e "s|__APP_PORT__|$${PROM_TARGET_PORT:-10808}|g" \
-            /etc/prometheus/prometheus.yml > /tmp/prometheus.yml && \
-        /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
