@@ -221,7 +221,7 @@ print(feature_importance.head(10).to_string(index=False))
 ```
 
 ```python
-# CÉLULA 9: Exportar para ONNX (CORRIGIDO!)
+# CÉLULA 9: Exportar para ONNX (CORRIGIDO v2!)
 
 # Instalar biblioteca correta para XGBoost
 !pip install onnxmltools onnxruntime -q
@@ -232,12 +232,36 @@ import onnxruntime as rt
 
 print("💾 Exportando XGBoost para ONNX...")
 
+# IMPORTANTE: Retreinar modelo SEM feature names
+# XGBoost precisa usar índices numéricos para ONNX
+model_for_onnx = xgb.XGBClassifier(
+    n_estimators=300,
+    max_depth=6,
+    learning_rate=0.05,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    scale_pos_weight=3,
+    random_state=42,
+    eval_metric='auc',
+    tree_method='hist'
+)
+
+# Treinar sem feature names (usa apenas arrays numpy)
+print("🔄 Retreinando modelo para ONNX...")
+model_for_onnx.fit(
+    X_train_balanced.values,  # .values remove feature names
+    y_train_balanced.values,
+    verbose=False
+)
+
+print("✅ Modelo retreinado")
+
 # Definir input shape
 initial_type = [('float_input', FloatTensorType([None, X_train.shape[1]]))]
 
 # Converter XGBoost para ONNX (usa onnxmltools, não skl2onnx!)
 onx = onnxmltools.convert_xgboost(
-    model, 
+    model_for_onnx, 
     initial_types=initial_type,
     target_opset=12
 )
@@ -257,6 +281,19 @@ test_sample = X_test.iloc[0:1].values.astype(np.float32)
 pred_onnx = sess.run(None, {input_name: test_sample})
 
 print(f"✅ Teste ONNX OK! Predição: {pred_onnx[1][0][1]:.4f}")
+
+# Comparar com modelo original
+pred_original = model.predict_proba(X_test.iloc[0:1])[:, 1][0]
+pred_onnx_value = pred_onnx[1][0][1]
+diff = abs(pred_original - pred_onnx_value)
+
+print(f"\n📊 Validação:")
+print(f"   Predição Original: {pred_original:.4f}")
+print(f"   Predição ONNX:     {pred_onnx_value:.4f}")
+print(f"   Diferença:         {diff:.6f}")
+
+if diff < 0.001:
+    print("   ✅ Modelos são equivalentes!")
 
 # Download
 from google.colab import files

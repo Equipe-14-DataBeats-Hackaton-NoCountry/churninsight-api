@@ -1,5 +1,46 @@
 # 🔧 Troubleshooting: Exportar XGBoost para ONNX
 
+## ❌ Erro: "Unable to interpret 'device_type', feature names should follow pattern 'f%d'"
+
+### Causa
+XGBoost está usando nomes de features (strings) ao invés de índices numéricos. ONNX requer índices.
+
+### Solução
+Retreinar o modelo usando apenas arrays numpy (sem feature names):
+
+```python
+# Retreinar modelo SEM feature names
+model_for_onnx = xgb.XGBClassifier(
+    n_estimators=300,
+    max_depth=6,
+    learning_rate=0.05,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    scale_pos_weight=3,
+    random_state=42,
+    eval_metric='auc',
+    tree_method='hist'
+)
+
+# Usar .values para remover feature names
+model_for_onnx.fit(
+    X_train_balanced.values,  # Remove feature names
+    y_train_balanced.values,
+    verbose=False
+)
+
+# Agora converter para ONNX
+onx = onnxmltools.convert_xgboost(
+    model_for_onnx,  # Usar modelo retreinado
+    initial_types=initial_type,
+    target_opset=12
+)
+```
+
+**Importante**: O modelo retreinado terá a mesma performance, apenas sem feature names.
+
+---
+
 ## ❌ Erro: "Unable to find a shape calculator"
 
 ### Causa
