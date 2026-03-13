@@ -195,12 +195,12 @@ class PredictionControllerIntegrationTest {
 
         // Act & Assert - validar resposta com estatísticas
         mockMvc.perform(post("/stats")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").exists())
-                .andExpect(jsonPath("$.probability").exists())
-                .andExpect(jsonPath("$.class_probabilities").exists());
+                .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                .content(java.util.Objects.requireNonNull(requestBody)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.label").exists())
+            .andExpect(jsonPath("$.probability").exists())
+            .andExpect(jsonPath("$.class_probabilities").exists());
     }
 
     /**

@@ -54,9 +54,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @org.checkerframework.checker.nullness.qual.NonNull HttpServletRequest request,
+            @org.checkerframework.checker.nullness.qual.NonNull HttpServletResponse response,
+            @org.checkerframework.checker.nullness.qual.NonNull FilterChain filterChain) throws ServletException, IOException {
 
         if (isExcludedPath(request.getRequestURI())) {
             filterChain.doFilter(request, response);
