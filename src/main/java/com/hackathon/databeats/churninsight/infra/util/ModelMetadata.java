@@ -1,5 +1,7 @@
 package com.hackathon.databeats.churninsight.infra.util;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hackathon.databeats.churninsight.application.port.output.ModelMetadataPort;
 import lombok.Data;
@@ -17,6 +19,7 @@ import java.util.List;
  */
 @Data
 public class ModelMetadata implements ModelMetadataPort {
+@JsonIgnoreProperties(ignoreUnknown = true)
 
     /** Nome identificador do modelo. */
     private String name;
@@ -38,6 +41,10 @@ public class ModelMetadata implements ModelMetadataPort {
     /** Lista de features categóricas esperadas pelo modelo. */
     @JsonProperty(value = "categorical_features")
     private List<String> categoricalFeatures;
+
+    /** Threshold genérico do modelo (campo extra do JSON). */
+    @JsonProperty(value = "threshold")
+    private Double threshold;
 
     /** Tipo do algoritmo utilizado (ex: Logistic Regression with SMOTE). */
     @JsonProperty(value = "model_type")

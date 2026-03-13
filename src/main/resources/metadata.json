@@ -2,7 +2,7 @@
   "model_type": "XGBoost",
   "version": "2.0",
   "accuracy": 0.5108491987845313,
-  "threshold": 0.11009792238473892,
+  "threshold_otimo": 0.11009792238473892,
   "features": [
     "user_id",
     "gender",
