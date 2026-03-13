@@ -1,5 +1,6 @@
 package com.hackathon.databeats.churninsight.application.port.input;
 
+import com.hackathon.databeats.churninsight.application.dto.PredictionResult;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 
 /**
@@ -43,6 +44,8 @@ public interface PredictChurnUseCase {
 	 * @param requestIp endereço IP da requisição
 	 * @throws com.hackathon.databeats.churninsight.domain.exception.PredictionException
 	 *         se ocorrer erro na inferência ou persistência
+	 * @return resultado da predição, com probabilidades e label, para evitar segunda
+	 *         chamada ao modelo quando o chamador também precisa dos dados
 	 */
-	void predict(CustomerProfile profile, String requesterId, String requestIp);
+	PredictionResult predict(CustomerProfile profile, String requesterId, String requestIp);
 }

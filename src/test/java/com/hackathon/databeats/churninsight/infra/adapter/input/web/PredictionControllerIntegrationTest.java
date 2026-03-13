@@ -110,8 +110,8 @@ class PredictionControllerIntegrationTest {
                 .classProbabilities(Map.of("WILL_STAY", 0.75f, "WILL_CHURN", 0.25f))
                 .build();
 
-        when(predictionStatsUseCase.predictWithStats(any(CustomerProfile.class), anyString(), anyString()))
-                .thenReturn(mockResult);
+        when(predictChurnUseCase.predict(any(CustomerProfile.class), anyString(), anyString()))
+            .thenReturn(mockResult);
 
         String requestBody = createValidProfileJson();
 
@@ -187,7 +187,7 @@ class PredictionControllerIntegrationTest {
                 .build();
 
         when(predictionStatsUseCase.predictWithStats(any(CustomerProfile.class), anyString(), anyString()))
-                .thenReturn(mockResult);
+            .thenReturn(mockResult);
 
         String requestBody = createValidProfileJson();
 

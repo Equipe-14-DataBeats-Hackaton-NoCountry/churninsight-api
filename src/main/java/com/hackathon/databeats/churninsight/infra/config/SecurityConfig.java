@@ -87,8 +87,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> {
-                    // Keep cache/clear restricted to ADMIN
-                    auth.requestMatchers("/cache/clear").hasRole("ADMIN");
+                        // Keep cache/clear and observability endpoint restricted to ADMIN
+                        auth.requestMatchers("/cache/clear", "/actuator/prometheus", "/actuator/prometheus/**")
+                            .hasRole("ADMIN");
 
                     if (allowUnauthenticatedPredict) {
                         // In dev/tunnel mode allow POSTs to prediction endpoints without Basic auth
@@ -107,15 +108,18 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Configuração segura de CORS - lista branca de origens
-        // Suporta '*' (todos) via allowed origin patterns quando necessário (ex: dev/tunnel)
-        if (allowedOrigins != null && allowedOrigins.trim().equals("*")) {
-            // Permitir todos os padrões de origem (compatível com allowCredentials=true)
-            config.setAllowedOriginPatterns(List.of("*"));
-        } else {
-            List<String> origins = Arrays.asList(allowedOrigins.split(","));
-            config.setAllowedOrigins(origins);
+        // Configuração segura de CORS - credenciais exigem origens explícitas.
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .filter(origin -> !"*".equals(origin))
+                .toList();
+
+        if (origins.isEmpty()) {
+            origins = List.of("http://localhost:3000", "http://localhost:5173");
         }
+
+        config.setAllowedOrigins(origins);
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));

@@ -103,7 +103,9 @@ public class BatchProcessingService implements BatchProcessingUseCase {
 
         try {
             Path tempDir = Files.createTempDirectory("churn_batch_");
-            Path tempFile = tempDir.resolve(originalFilename != null ? originalFilename : "data.csv");
+            // Nunca usar o nome original como caminho — evita path traversal
+            String safeExtension = (originalFilename != null && originalFilename.toLowerCase().endsWith(".xlsx")) ? "xlsx" : "csv";
+            Path tempFile = Files.createTempFile(tempDir, "upload_", "." + safeExtension);
             Files.copy(multipartFile.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
 
             log.info("Arquivo salvo temporariamente para processamento: {}", tempFile);

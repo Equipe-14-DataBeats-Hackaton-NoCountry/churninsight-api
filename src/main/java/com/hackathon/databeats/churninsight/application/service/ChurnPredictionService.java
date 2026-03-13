@@ -45,11 +45,12 @@ public class ChurnPredictionService implements PredictChurnUseCase, PredictionSt
      * <p>Executa a predição e persiste o resultado no histórico para auditoria.</p>
      */
     @Override
-    public void predict(CustomerProfile profile, String requesterId, String requestIp) {
+    public PredictionResult predict(CustomerProfile profile, String requesterId, String requestIp) {
         try {
             Map<String, Object> featuresCalculadas = ChurnBusinessRules.calculateEngineeredFeatures(profile);
             float[] predicao = inferencePort.predict(profile, featuresCalculadas);
             double probabilidadeChurn = predicao[1];
+            double probabilidadePermanencia = predicao[0];
 
             ChurnStatus status = determinarStatus(probabilidadeChurn);
 
@@ -68,17 +69,23 @@ public class ChurnPredictionService implements PredictChurnUseCase, PredictionSt
             log.info("Predição salva - UserId: {} | Status: {} | Prob: {}",
                     profile.userId(), status, String.format("%.4f", probabilidadeChurn));
 
+            Map<String, Float> probabilidadesPorClasse = Map.of(
+                    ChurnStatus.WILL_CHURN.name(), (float) probabilidadeChurn,
+                    ChurnStatus.WILL_STAY.name(), (float) probabilidadePermanencia
+            );
+
+            return PredictionResult.builder()
+                    .label(status)
+                    .probability(probabilidadeChurn)
+                    .probabilities(predicao)
+                    .classProbabilities(probabilidadesPorClasse)
+                    .build();
+
         } catch (Exception e) {
             log.error("Erro ao executar predição: {}", e.getMessage());
             throw new PredictionException("Falha na execução da predição: " + e.getMessage());
         }
     }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Executa a predição e retorna estatísticas detalhadas sem persistência.</p>
-     */
     @Override
     public PredictionResult predictWithStats(CustomerProfile profile, String requesterId, String requestIp) {
         try {

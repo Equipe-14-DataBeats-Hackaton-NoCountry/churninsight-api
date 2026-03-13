@@ -58,7 +58,7 @@ services:
       DASHBOARD_INCLUDE_LEGACY_CHURN_DISTRIBUTION: ${DASHBOARD_INCLUDE_LEGACY_CHURN_DISTRIBUTION:-true}
       RETENTION_PRIORITY_HIGH_THRESHOLD: ${RETENTION_PRIORITY_HIGH_THRESHOLD:-6.0}
       RETENTION_PRIORITY_MEDIUM_THRESHOLD: ${RETENTION_PRIORITY_MEDIUM_THRESHOLD:-3.0}
-      CORS_ALLOWED_ORIGINS: "*"
+      CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:5173"
       JAVA_OPTS: "-Xmx3g -Xms1g -XX:+UseZGC -XX:MaxGCPauseMillis=200"
     networks:
       - churn-net
@@ -104,6 +104,21 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: monitoring-prometheus
+    env_file:
+      - .env
+    environment:
+      PROM_SCRAPE_USER: ${SECURITY_USER}
+      PROM_SCRAPE_PASSWORD: ${SECURITY_PASSWORD}
+      PROM_TARGET_PORT: ${APP_PORT}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        sed -e "s|__PROM_SCRAPE_USER__|$$PROM_SCRAPE_USER|g" \
+            -e "s|__PROM_SCRAPE_PASSWORD__|$$PROM_SCRAPE_PASSWORD|g" \
+            -e "s|__APP_PORT__|$${PROM_TARGET_PORT:-10808}|g" \
+            /etc/prometheus/prometheus.yml > /tmp/prometheus.yml && \
+        /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:

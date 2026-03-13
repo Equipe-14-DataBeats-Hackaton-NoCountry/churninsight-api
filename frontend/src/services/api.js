@@ -36,44 +36,23 @@ const runtimeCredentials = {
 /**
  * Allows setting credentials at runtime without browser prompt UX.
  * Useful when env vars are intentionally omitted.
+ * Credentials are held in memory only — never persisted in browser storage.
  */
-export const setApiCredentials = (username, password, persistInSession = true) => {
+export const setApiCredentials = (username, password) => {
   if (!username || !password) {
     throw new Error('Usuario e senha sao obrigatorios para autenticar na API')
   }
 
   runtimeCredentials.username = username
   runtimeCredentials.password = password
-
-  if (persistInSession) {
-    try {
-      sessionStorage.setItem('churn_api_creds', JSON.stringify({ username, password }))
-    } catch (e) {
-      // ignore storage errors
-    }
-  }
 }
 
 /**
- * Ensure we have credentials available. If not present from env, try sessionStorage.
+ * Ensure credentials are available (from env vars or a prior setApiCredentials call).
+ * Credentials are never read from browser storage to prevent XSS exfiltration.
  */
 const ensureCredentials = () => {
   if (runtimeCredentials.username && runtimeCredentials.password) return;
-
-  // Try to restore from sessionStorage (avoids prompting on every reload during a session)
-  try {
-    const stored = sessionStorage.getItem('churn_api_creds');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed && parsed.username && parsed.password) {
-        runtimeCredentials.username = parsed.username;
-        runtimeCredentials.password = parsed.password;
-        return;
-      }
-    }
-  } catch (e) {
-    // ignore sessionStorage errors
-  }
 
   throw new Error('Sem credenciais para a API. Configure VITE_API_USERNAME/VITE_API_PASSWORD ou chame setApiCredentials(username, password).');
 };

@@ -22,8 +22,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -94,21 +95,21 @@ public class PredictionController {
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
-    @Cacheable(value = "predictions", key = "#request.toString()", unless = "#result.containsKey('error')")
     public Map<String, Object> predict(
             @Valid @RequestBody CustomerProfileRequest request,
             HttpServletRequest httpRequest) {
 
         long inicio = System.currentTimeMillis();
-        String requesterId = "hackathon-user";
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String requesterId = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+            ? auth.getName() : "anonymous";
         String requestIp = NetworkUtils.getClientIp(httpRequest);
 
         CustomerProfile profile = request.toDomain();
         log.debug("Iniciando predição - UserId: {}, IP: {}", profile.userId(), requestIp);
 
-        // Persiste a predição no histórico para alimentar métricas do dashboard.
-        predictChurnUseCase.predict(profile, requesterId, requestIp);
-        PredictionResult resultado = predictionStatsUseCase.predictWithStats(profile, requesterId, requestIp);
+        // Uma única chamada ao modelo: persiste o histórico e retorna as estatísticas.
+        PredictionResult resultado = predictChurnUseCase.predict(profile, requesterId, requestIp);
         Map<String, Object> resposta = construirResposta(resultado, profile);
 
         long duracao = System.currentTimeMillis() - inicio;
@@ -130,12 +131,13 @@ public class PredictionController {
             summary = "Estatísticas completas de predição",
             description = "Retorna predição com probabilidades detalhadas para cada classe"
     )
-    @Cacheable(value = "predictionStats", key = "#request.toString() + '_' + #httpRequest.remoteAddr")
     public Map<String, Object> stats(
             @Valid @RequestBody CustomerProfileRequest request,
             HttpServletRequest httpRequest) {
 
-        String requesterId = "hackathon-user";
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String requesterId = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+            ? auth.getName() : "anonymous";
         String requestIp = NetworkUtils.getClientIp(httpRequest);
         CustomerProfile profile = request.toDomain();
 
