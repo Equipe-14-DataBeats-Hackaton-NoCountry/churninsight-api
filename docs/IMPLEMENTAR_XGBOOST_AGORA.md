@@ -221,23 +221,42 @@ print(feature_importance.head(10).to_string(index=False))
 ```
 
 ```python
-# CÉLULA 9: Exportar para ONNX
-from skl2onnx import convert_sklearn
-from skl2onnx.common.data_types import FloatTensorType
+# CÉLULA 9: Exportar para ONNX (CORRIGIDO!)
 
-print("💾 Exportando para ONNX...")
+# Instalar biblioteca correta para XGBoost
+!pip install onnxmltools onnxruntime -q
 
-# Preparar input type
+import onnxmltools
+from onnxmltools.convert.common.data_types import FloatTensorType
+import onnxruntime as rt
+
+print("💾 Exportando XGBoost para ONNX...")
+
+# Definir input shape
 initial_type = [('float_input', FloatTensorType([None, X_train.shape[1]]))]
 
-# Converter
-onx = convert_sklearn(model, initial_types=initial_type, target_opset=12)
+# Converter XGBoost para ONNX (usa onnxmltools, não skl2onnx!)
+onx = onnxmltools.convert_xgboost(
+    model, 
+    initial_types=initial_type,
+    target_opset=12
+)
 
 # Salvar
 with open("modelo_xgboost.onnx", "wb") as f:
     f.write(onx.SerializeToString())
 
 print("✅ Modelo exportado: modelo_xgboost.onnx")
+
+# Testar se funciona
+sess = rt.InferenceSession("modelo_xgboost.onnx")
+input_name = sess.get_inputs()[0].name
+
+# Teste com uma amostra
+test_sample = X_test.iloc[0:1].values.astype(np.float32)
+pred_onnx = sess.run(None, {input_name: test_sample})
+
+print(f"✅ Teste ONNX OK! Predição: {pred_onnx[1][0][1]:.4f}")
 
 # Download
 from google.colab import files

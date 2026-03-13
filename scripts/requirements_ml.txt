@@ -15,8 +15,9 @@ catboost>=1.2.0
 optuna>=3.3.0
 
 # Exportar para ONNX
-skl2onnx>=1.15.0
+onnxmltools>=1.11.0
 onnxruntime>=1.16.0
+onnx>=1.14.0
 
 # Visualização
 matplotlib>=3.7.0
