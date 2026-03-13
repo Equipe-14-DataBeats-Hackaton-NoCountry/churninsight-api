@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Component // <--- ESTA ANOTAÇÃO É CRÍTICA! Ela diz ao Spring para carregar essa classe.
@@ -23,7 +24,7 @@ public class ClientPredictionJpaAdapter implements ClientPredictionOutputPort {
 
     @Override
     public Optional<ClientPrediction> findById(String clientId) {
-        return repository.findById(clientId).map(mapper::toDomain);
+        return repository.findById(Objects.requireNonNull(clientId, "clientId is required")).map(mapper::toDomain);
     }
 
     @Override

@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -60,12 +61,13 @@ public class RetentionOperationsService {
     }
 
     public RetentionActionResponse createAction(CreateRetentionActionRequest request) {
-        var client = predictionHistoryRepository.findById(request.clientId())
+        String clientId = Objects.requireNonNull(request.clientId(), "clientId is required");
+        var client = predictionHistoryRepository.findById(clientId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente nao encontrado"));
 
         RetentionActionEntity entity = new RetentionActionEntity();
         entity.setId(UUID.randomUUID().toString());
-        entity.setClientId(request.clientId());
+        entity.setClientId(clientId);
         entity.setUserId(client.getUserId());
         entity.setActionType(request.actionType());
         entity.setChannel(request.channel());
@@ -79,7 +81,8 @@ public class RetentionOperationsService {
     }
 
     public RetentionActionResponse updateActionStatus(String actionId, UpdateRetentionActionStatusRequest request) {
-        RetentionActionEntity entity = retentionActionRepository.findById(actionId)
+        String safeActionId = Objects.requireNonNull(actionId, "actionId is required");
+        RetentionActionEntity entity = retentionActionRepository.findById(safeActionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Acao de retencao nao encontrada"));
 
         entity.setStatus(request.status());
@@ -92,15 +95,16 @@ public class RetentionOperationsService {
     }
 
     public RetentionOutcomeResponse registerOutcome(String actionId, CreateRetentionOutcomeRequest request) {
-        RetentionActionEntity action = retentionActionRepository.findById(actionId)
+        String safeActionId = Objects.requireNonNull(actionId, "actionId is required");
+        RetentionActionEntity action = retentionActionRepository.findById(safeActionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Acao de retencao nao encontrada"));
 
-        RetentionOutcomeEntity entity = retentionOutcomeRepository.findByActionId(actionId)
+        RetentionOutcomeEntity entity = retentionOutcomeRepository.findByActionId(safeActionId)
                 .orElseGet(RetentionOutcomeEntity::new);
 
         if (entity.getId() == null) {
             entity.setId(UUID.randomUUID().toString());
-            entity.setActionId(actionId);
+            entity.setActionId(safeActionId);
         }
 
         entity.setOutcomeType(request.outcomeType());

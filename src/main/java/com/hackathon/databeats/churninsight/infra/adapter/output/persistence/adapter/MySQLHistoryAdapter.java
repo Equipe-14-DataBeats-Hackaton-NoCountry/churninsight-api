@@ -23,7 +23,7 @@ public class MySQLHistoryAdapter implements SaveHistoryPort {
     @Override
     public void save(PredictionHistory history) {
         PredictionHistoryEntity entity = toEntity(history);
-        this.repository.save(entity);
+        this.repository.save(java.util.Objects.requireNonNull(entity, "PredictionHistoryEntity must not be null"));
     }
 
     /**

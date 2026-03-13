@@ -514,7 +514,7 @@ public class BatchProcessingService implements BatchProcessingUseCase {
     public void clearPredictionCache() {
         if (cacheManager != null) {
             cacheManager.getCacheNames().forEach(n -> {
-                var cache = cacheManager.getCache(n);
+                var cache = cacheManager.getCache(Objects.requireNonNull(n));
                 if (cache != null)
                     cache.clear();
             });

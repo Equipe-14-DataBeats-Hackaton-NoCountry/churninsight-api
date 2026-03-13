@@ -1,7 +1,6 @@
 package com.hackathon.databeats.churninsight.application.port.output;
 
 import com.hackathon.databeats.churninsight.domain.model.PredictionHistory;
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.adapter.MySQLHistoryAdapter;
 
 /**
  * Port de saída para persistência do histórico de predições.

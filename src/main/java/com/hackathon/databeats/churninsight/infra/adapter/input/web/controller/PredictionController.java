@@ -7,7 +7,6 @@ import com.hackathon.databeats.churninsight.application.port.input.PredictionSta
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 import com.hackathon.databeats.churninsight.domain.rules.ChurnDiagnosisService;
 import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.CustomerProfileRequest;
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.PredictionStatsResponse;
 import com.hackathon.databeats.churninsight.infra.exception.ApiErrorResponse;
 import com.hackathon.databeats.churninsight.infra.util.ModelMetadata;
 import com.hackathon.databeats.churninsight.infra.util.NetworkUtils;

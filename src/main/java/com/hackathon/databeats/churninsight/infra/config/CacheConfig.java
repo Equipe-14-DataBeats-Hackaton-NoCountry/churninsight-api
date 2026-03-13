@@ -29,7 +29,8 @@ public class CacheConfig {
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
 
-        cacheManager.setCaffeine(Caffeine.newBuilder()
+        cacheManager.setCaffeine(java.util.Objects.requireNonNull(
+            Caffeine.newBuilder()
                 .initialCapacity(100)
                 .maximumSize(maxSize)
                 .expireAfterWrite(ttlMinutes, TimeUnit.MINUTES)
@@ -39,7 +40,7 @@ public class CacheConfig {
                         log.debug("Cache evict: key={} cause={}", key, cause);
                     }
                 })
-        );
+        , "Caffeine builder must not be null"));
 
         cacheManager.setCacheNames(List.of(
                 "stats",

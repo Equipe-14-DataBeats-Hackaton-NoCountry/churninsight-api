@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import java.util.Objects;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,7 +115,7 @@ public class PredictionHistoryQueryAdapter implements PredictionHistoryQueryPort
             PredictionSearchFilter filter, int page, int size, String sortBy, String sortDir) {
 
         Sort sort = createSort(sortBy, sortDir);
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page, size, Objects.requireNonNull(sort, "Sort must not be null"));
 
         Specification<PredictionHistoryEntity> spec = PredictionHistorySpecification.withFilters(filter);
         Page<PredictionHistoryEntity> resultPage = repository.findAll(spec, pageable);
