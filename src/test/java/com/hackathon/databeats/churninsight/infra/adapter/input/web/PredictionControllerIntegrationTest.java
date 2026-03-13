@@ -117,8 +117,8 @@ class PredictionControllerIntegrationTest {
 
         // Act & Assert - executar e validar resposta HTTP
         mockMvc.perform(post("/predict")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                        .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                        .content(java.util.Objects.requireNonNull(requestBody)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.prediction").exists())
                 .andExpect(jsonPath("$.probability").exists())
@@ -136,7 +136,7 @@ class PredictionControllerIntegrationTest {
         String emptyProfile = "{}";
 
         mockMvc.perform(post("/predict")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_JSON))
                         .content(emptyProfile))
                 .andExpect(status().isBadRequest());
     }
