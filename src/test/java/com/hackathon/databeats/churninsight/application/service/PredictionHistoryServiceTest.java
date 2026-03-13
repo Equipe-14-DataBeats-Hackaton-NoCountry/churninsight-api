@@ -1,6 +1,6 @@
 package com.hackathon.databeats.churninsight.application.service;
 
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository.PredictionHistoryRepository;
+import com.hackathon.databeats.churninsight.application.port.output.PredictionHistoryQueryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,19 +19,19 @@ import static org.mockito.Mockito.when;
 class PredictionHistoryServiceTest {
 
     @Mock
-    private PredictionHistoryRepository repository;
+    private PredictionHistoryQueryPort predictionHistoryQueryPort;
 
     private PredictionHistoryService predictionHistoryService;
 
     @BeforeEach
     void setUp() {
-        predictionHistoryService = new PredictionHistoryService(repository);
+        predictionHistoryService = new PredictionHistoryService(predictionHistoryQueryPort);
     }
 
     @Test
     @DisplayName("Deve montar riskFactorCounts com tupla linear")
     void shouldBuildRiskFactorCountsFromLinearTuple() {
-        when(repository.getRiskFactorCounts()).thenReturn(new Object[]{11L, 22L, 33L, 44L, 55L});
+        when(predictionHistoryQueryPort.getRiskFactorCounts()).thenReturn(new Object[]{11L, 22L, 33L, 44L, 55L});
 
         Map<String, Object> aggregates = predictionHistoryService.getAggregates();
 
@@ -51,7 +51,7 @@ class PredictionHistoryServiceTest {
     @DisplayName("Deve montar riskFactorCounts com tupla aninhada")
     void shouldBuildRiskFactorCountsFromNestedTuple() {
         Object[] nested = new Object[]{9L, 8L, 7L, 6L, 5L};
-        when(repository.getRiskFactorCounts()).thenReturn(new Object[]{nested});
+        when(predictionHistoryQueryPort.getRiskFactorCounts()).thenReturn(new Object[]{nested});
 
         Map<String, Object> aggregates = predictionHistoryService.getAggregates();
 

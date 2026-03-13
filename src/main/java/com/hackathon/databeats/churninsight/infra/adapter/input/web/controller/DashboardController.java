@@ -1,6 +1,6 @@
 package com.hackathon.databeats.churninsight.infra.adapter.input.web.controller;
 
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.DashboardMetricsResponse;
+import com.hackathon.databeats.churninsight.application.dto.DashboardMetricsResponse;
 import com.hackathon.databeats.churninsight.application.service.DashboardMetricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

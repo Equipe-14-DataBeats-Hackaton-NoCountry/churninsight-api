@@ -1,11 +1,11 @@
 package com.hackathon.databeats.churninsight.application.service;
 
+import com.hackathon.databeats.churninsight.application.dto.DashboardMetricsResponse;
+import com.hackathon.databeats.churninsight.application.dto.DashboardMetricsResponse.FeatureImportanceItem;
+import com.hackathon.databeats.churninsight.application.dto.DashboardMetricsResponse.RiskFactorItem;
+import com.hackathon.databeats.churninsight.application.port.output.ModelMetadataPort;
+import com.hackathon.databeats.churninsight.application.port.output.PredictionHistoryQueryPort;
 import com.hackathon.databeats.churninsight.domain.enums.ChurnStatus;
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.DashboardMetricsResponse;
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.DashboardMetricsResponse.FeatureImportanceItem;
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.DashboardMetricsResponse.RiskFactorItem;
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository.PredictionHistoryRepository;
-import com.hackathon.databeats.churninsight.infra.util.ModelMetadata;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,18 +18,18 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DashboardMetricsService {
 
-    private final PredictionHistoryRepository predictionHistoryRepository;
-    private final ModelMetadata modelMetadata;
+    private final PredictionHistoryQueryPort predictionHistoryQueryPort;
+    private final ModelMetadataPort modelMetadataPort;
 
         @Value("${dashboard.include-legacy-churn-distribution:true}")
         private boolean includeLegacyChurnDistribution;
 
     public DashboardMetricsResponse getMetrics() {
         // 1 - Total de clientes (fonte única: histórico persistido)
-        long totalCustomers = this.predictionHistoryRepository.count();
+        long totalCustomers = predictionHistoryQueryPort.count();
 
         // 2 - Clientes em risco (TOP 25% por probabilidade)  -> regra Mariana
-        Long customersAtRisk = this.predictionHistoryRepository.countTop25AtRisk();
+        Long customersAtRisk = predictionHistoryQueryPort.countTop25AtRisk();
         if (customersAtRisk == null) customersAtRisk = 0L;
 
         // 3 - Clientes em monitoramento (%) = TOP 25% (não é WILL_CHURN)
@@ -41,7 +41,7 @@ public class DashboardMetricsService {
         double revenueAtRisk = this.calculateRevenueAtRisk();
 
         // 5 - Precisão do modelo (0..1)
-        double modelAccuracy = this.modelMetadata.getAccuracy();
+        double modelAccuracy = modelMetadataPort.getAcuracia();
 
         // 6 - Principais fatores (consolidado no backend)
         List<RiskFactorItem> riskFactors = buildRiskFactors(totalCustomers);
@@ -69,8 +69,8 @@ public class DashboardMetricsService {
          * Campo legado para compatibilidade temporaria: [willStay, willChurn]
          */
         private List<Long> buildChurnDistribution() {
-                long willChurn = predictionHistoryRepository.countByChurnStatus(ChurnStatus.WILL_CHURN);
-                long willStay = predictionHistoryRepository.countByChurnStatus(ChurnStatus.WILL_STAY);
+                long willChurn = predictionHistoryQueryPort.countByChurnStatus(ChurnStatus.WILL_CHURN);
+                long willStay = predictionHistoryQueryPort.countByChurnStatus(ChurnStatus.WILL_STAY);
                 return List.of(willStay, willChurn);
         }
 
@@ -79,7 +79,7 @@ public class DashboardMetricsService {
      * Repo retorna (na ordem): free+ads, skipHigh, frustHigh, premiumNoOffline, lowListeningTime
      */
     private List<RiskFactorItem> buildRiskFactors(long totalCustomers) {
-        Object[] raw = normalizeAggregateTuple(predictionHistoryRepository.getRiskFactorCounts(), 5);
+        Object[] raw = normalizeAggregateTuple(predictionHistoryQueryPort.getRiskFactorCounts(), 5);
         if (raw == null) return List.of();
 
         Map<String, Long> counts = new LinkedHashMap<>();
@@ -148,7 +148,7 @@ public class DashboardMetricsService {
                 "Free", 0.0
         );
 
-        List<Object[]> top25ByPlan = this.predictionHistoryRepository.getTop25SubscriptionCounts();
+        List<Object[]> top25ByPlan = predictionHistoryQueryPort.getTop25SubscriptionCounts();
 
         return top25ByPlan.stream()
                 .mapToDouble(row -> {

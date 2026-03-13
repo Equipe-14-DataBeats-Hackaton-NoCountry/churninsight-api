@@ -1,7 +1,7 @@
 package com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository;
 
 import com.hackathon.databeats.churninsight.application.port.output.BatchSavePort;
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.entity.PredictionHistoryEntity;
+import com.hackathon.databeats.churninsight.domain.model.PredictionHistory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
@@ -35,49 +35,40 @@ public class JdbcBatchRepository implements BatchSavePort {
 
     @Override
     @Transactional
-    public void saveAll(List<PredictionHistoryEntity> entities) {
-        // OTIMIZAÇÃO: Batch de 10k para melhor throughput em arquivos grandes
-        saveBatch(entities, 10000);
+    public void saveAll(List<PredictionHistory> histories) {
+        saveBatch(histories, 10000);
     }
 
     @Override
     @Transactional
-    public void saveBatch(List<PredictionHistoryEntity> entities, int batchSize) {
-        if (entities.isEmpty()) return;
+    public void saveBatch(List<PredictionHistory> histories, int batchSize) {
+        if (histories.isEmpty()) return;
 
         try {
-            jdbcTemplate.batchUpdate(INSERT_SQL, entities, batchSize,
-                    (PreparedStatement ps, PredictionHistoryEntity entity) -> {
-                        ps.setString(1, entity.getId());
-                        ps.setString(2, entity.getUserId());
-                        ps.setString(3, entity.getGender());
-
-                        // Campos primitivos (int/double/boolean) não precisam de check != null
-                        ps.setInt(4, entity.getAge());
-                        ps.setString(5, entity.getCountry());
-                        ps.setString(6, entity.getSubscriptionType());
-                        ps.setDouble(7, entity.getListeningTime());
-                        ps.setInt(8, entity.getSongsPlayedPerDay());
-                        ps.setDouble(9, entity.getSkipRate());
-                        ps.setInt(10, entity.getAdsListenedPerWeek());
-                        ps.setString(11, entity.getDeviceType());
-
-                        // CORREÇÃO: Getter de boolean no Lombok é 'is'
-                        ps.setBoolean(12, entity.isOfflineListening());
-
-                        ps.setString(13, entity.getChurnStatus() != null ? entity.getChurnStatus().name() : "UNKNOWN");
-                        ps.setDouble(14, entity.getProbability());
-
-                        ps.setTimestamp(15, entity.getCreatedAt() != null ? Timestamp.valueOf(entity.getCreatedAt()) : Timestamp.valueOf(LocalDateTime.now()));
-                        ps.setString(16, entity.getRequesterId());
-                        ps.setString(17, entity.getRequestIp());
-
-                        // Campos Double/Boolean (Wrappers) ainda precisam do check != null
-                        ps.setDouble(18, entity.getFrustrationIndex() != null ? entity.getFrustrationIndex() : 0.0);
-                        ps.setDouble(19, entity.getAdIntensity() != null ? entity.getAdIntensity() : 0.0);
-                        ps.setDouble(20, entity.getSongsPerMinute() != null ? entity.getSongsPerMinute() : 0.0);
-                        ps.setBoolean(21, entity.getIsHeavyUser() != null ? entity.getIsHeavyUser() : false);
-                        ps.setBoolean(22, entity.getPremiumNoOffline() != null ? entity.getPremiumNoOffline() : false);
+            jdbcTemplate.batchUpdate(INSERT_SQL, histories, batchSize,
+                    (PreparedStatement ps, PredictionHistory h) -> {
+                        ps.setString(1, h.id());
+                        ps.setString(2, h.userId());
+                        ps.setString(3, h.gender());
+                        ps.setInt(4, h.age() != null ? h.age() : 0);
+                        ps.setString(5, h.country());
+                        ps.setString(6, h.subscriptionType());
+                        ps.setDouble(7, h.listeningTime() != null ? h.listeningTime() : 0.0);
+                        ps.setInt(8, h.songsPlayedPerDay() != null ? h.songsPlayedPerDay() : 0);
+                        ps.setDouble(9, h.skipRate() != null ? h.skipRate() : 0.0);
+                        ps.setInt(10, h.adsListenedPerWeek() != null ? h.adsListenedPerWeek() : 0);
+                        ps.setString(11, h.deviceType());
+                        ps.setBoolean(12, h.offlineListening() != null && h.offlineListening());
+                        ps.setString(13, h.churnStatus() != null ? h.churnStatus().name() : "UNKNOWN");
+                        ps.setDouble(14, h.probability() != null ? h.probability() : 0.0);
+                        ps.setTimestamp(15, h.createdAt() != null ? Timestamp.valueOf(h.createdAt()) : Timestamp.valueOf(LocalDateTime.now()));
+                        ps.setString(16, h.requesterId());
+                        ps.setString(17, h.requestIp());
+                        ps.setObject(18, h.frustrationIndex());
+                        ps.setObject(19, h.adIntensity());
+                        ps.setObject(20, h.songsPerMinute());
+                        ps.setObject(21, h.isHeavyUser());
+                        ps.setObject(22, h.premiumNoOffline());
                     });
         } catch (Exception e) {
             log.error("Erro ao salvar no banco via JDBC: {}", e.getMessage());

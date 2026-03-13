@@ -1,8 +1,8 @@
 package com.hackathon.databeats.churninsight.application.service;
 
-import com.hackathon.databeats.churninsight.infra.adapter.input.web.dto.DashboardMetricsResponse;
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.repository.PredictionHistoryRepository;
-import com.hackathon.databeats.churninsight.infra.util.ModelMetadata;
+import com.hackathon.databeats.churninsight.application.dto.DashboardMetricsResponse;
+import com.hackathon.databeats.churninsight.application.port.output.ModelMetadataPort;
+import com.hackathon.databeats.churninsight.application.port.output.PredictionHistoryQueryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,23 +22,23 @@ import static org.mockito.Mockito.when;
 class DashboardMetricsServiceTest {
 
     @Mock
-    private PredictionHistoryRepository predictionHistoryRepository;
+    private PredictionHistoryQueryPort predictionHistoryQueryPort;
 
     @Mock
-    private ModelMetadata modelMetadata;
+    private ModelMetadataPort modelMetadataPort;
 
     private DashboardMetricsService dashboardMetricsService;
 
     @BeforeEach
     void setUp() {
-        dashboardMetricsService = new DashboardMetricsService(predictionHistoryRepository, modelMetadata);
+        dashboardMetricsService = new DashboardMetricsService(predictionHistoryQueryPort, modelMetadataPort);
     }
 
     @Test
     @DisplayName("Deve preencher risk_factors quando agregação vier em tupla linear")
     void shouldBuildRiskFactorsFromLinearAggregateTuple() {
         stubCommonMetrics();
-        when(predictionHistoryRepository.getRiskFactorCounts())
+        when(predictionHistoryQueryPort.getRiskFactorCounts())
                 .thenReturn(new Object[]{10L, 20L, 30L, 40L, 5L});
 
         DashboardMetricsResponse response = dashboardMetricsService.getMetrics();
@@ -56,7 +56,7 @@ class DashboardMetricsServiceTest {
     void shouldBuildRiskFactorsFromNestedAggregateTuple() {
         stubCommonMetrics();
         Object[] nested = new Object[]{8L, 16L, 24L, 32L, 4L};
-        when(predictionHistoryRepository.getRiskFactorCounts())
+        when(predictionHistoryQueryPort.getRiskFactorCounts())
                 .thenReturn(new Object[]{nested});
 
         DashboardMetricsResponse response = dashboardMetricsService.getMetrics();
@@ -74,12 +74,12 @@ class DashboardMetricsServiceTest {
     }
 
     private void stubCommonMetrics() {
-        when(predictionHistoryRepository.count()).thenReturn(100L);
-        when(predictionHistoryRepository.countTop25AtRisk()).thenReturn(25L);
+        when(predictionHistoryQueryPort.count()).thenReturn(100L);
+        when(predictionHistoryQueryPort.countTop25AtRisk()).thenReturn(25L);
         List<Object[]> top25SubscriptionCounts = new ArrayList<>();
         top25SubscriptionCounts.add(new Object[]{"Premium", 10L});
-        when(predictionHistoryRepository.getTop25SubscriptionCounts())
+        when(predictionHistoryQueryPort.getTop25SubscriptionCounts())
             .thenReturn(top25SubscriptionCounts);
-        when(modelMetadata.getAccuracy()).thenReturn(0.6488);
+        when(modelMetadataPort.getAcuracia()).thenReturn(0.6488);
     }
 }

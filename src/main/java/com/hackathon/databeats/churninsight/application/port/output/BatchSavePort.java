@@ -1,7 +1,6 @@
 package com.hackathon.databeats.churninsight.application.port.output;
 
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.adapter.JdbcBatchPersistenceAdapter;
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.entity.PredictionHistoryEntity;
+import com.hackathon.databeats.churninsight.domain.model.PredictionHistory;
 
 import java.util.List;
 
@@ -20,11 +19,6 @@ import java.util.List;
  *   <li>Suporte para rollback seletivo (não falhar tudo por 1 erro)</li>
  * </ul>
  *
- * <p><b>Implementações:</b></p>
- * <ul>
- *   <li>{@link JdbcBatchPersistenceAdapter}</li>
- * </ul>
- *
  * @author Equipe ChurnInsight
  * @version 1.0.0
  */
@@ -36,10 +30,10 @@ public interface BatchSavePort {
 	 * <p>Implementação deve usar JDBC batch insert com uma única transação.
 	 * Ideal para volumes pequenos/médios.</p>
 	 *
-	 * @param entities lista de predições para persistir
+	 * @param histories lista de predições para persistir
 	 * @throws RuntimeException se erro de banco de dados
 	 */
-	void saveAll(List<PredictionHistoryEntity> entities);
+	void saveAll(List<PredictionHistory> histories);
 
 	/**
 	 * Salva predições divididas em batches com transações independentes.
@@ -47,11 +41,11 @@ public interface BatchSavePort {
 	 * <p>Cada batch é uma transação separada. Reduz memória usada e permite
 	 * rollback granular. Ideal para volumes muito grandes (>100k registros).</p>
 	 *
-	 * @param predictions lista completa de predições para persistir
+	 * @param histories lista completa de predições para persistir
 	 * @param batchSize tamanho de cada batch (ex: 5000)
 	 * @throws RuntimeException se erro de banco de dados
 	 */
-	void saveBatch(List<PredictionHistoryEntity> predictions, int batchSize);
+	void saveBatch(List<PredictionHistory> histories, int batchSize);
 
 	/**
 	 * Conta o total de predições persistidas no banco.

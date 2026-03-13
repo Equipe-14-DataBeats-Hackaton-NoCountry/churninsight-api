@@ -8,8 +8,8 @@ import com.hackathon.databeats.churninsight.application.port.output.InferencePor
 import com.hackathon.databeats.churninsight.domain.enums.ChurnStatus;
 import com.hackathon.databeats.churninsight.domain.model.CustomerProfile;
 import com.hackathon.databeats.churninsight.domain.rules.ChurnBusinessRules;
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.entity.PredictionHistoryEntity;
-import com.hackathon.databeats.churninsight.infra.util.ModelMetadata;
+import com.hackathon.databeats.churninsight.application.port.output.ModelMetadataPort;
+import com.hackathon.databeats.churninsight.domain.model.PredictionHistory;
 import com.monitorjbl.xlsx.StreamingReader;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.processor.AbstractRowProcessor;
@@ -49,7 +49,7 @@ public class BatchProcessingService implements BatchProcessingUseCase {
     private final BatchSavePort batchSavePort;
     private final InferencePort inferencePort;
     private final CacheManager cacheManager;
-    private final ModelMetadata metadata;
+    private final ModelMetadataPort metadata;
     private final TaskExecutor taskExecutor;
     private final int batchSize;
     private final int maxRecords;
@@ -66,7 +66,7 @@ public class BatchProcessingService implements BatchProcessingUseCase {
             @Qualifier("jdbcBatchPersistenceAdapter") BatchSavePort batchSavePort,
             InferencePort inferencePort,
             CacheManager cacheManager,
-            ModelMetadata metadata,
+            ModelMetadataPort metadata,
             @Qualifier("batchExecutor") TaskExecutor taskExecutor,
             @Value("${app.batch.size:5000}") int batchSize,
             @Value("${app.batch.inference-threads:0}") int inferenceThreads,
@@ -272,19 +272,19 @@ public class BatchProcessingService implements BatchProcessingUseCase {
 
         try {
             // Usa ForkJoinPool dedicado para inferência (não compete com outras tarefas)
-            List<PredictionHistoryEntity> entities = inferencePool.submit(() ->
+            List<PredictionHistory> histories = inferencePool.submit(() ->
                     profiles.parallelStream()
-                            .map(p -> createEntityFromProfile(p, threshold, timestampMillis, batchTimestamp, requestIp))
+                            .map(p -> createHistoryFromProfile(p, threshold, timestampMillis, batchTimestamp, requestIp))
                             .filter(Objects::nonNull)
                             .toList()
             ).get();
 
-            if (!entities.isEmpty()) {
+            if (!histories.isEmpty()) {
                 long startDb = System.currentTimeMillis();
-                batchSavePort.saveAll(entities);
+                batchSavePort.saveAll(histories);
                 dbTimeAccumulator.addAndGet(System.currentTimeMillis() - startDb);
             }
-            return entities.size();
+            return histories.size();
 
         } catch (Exception e) {
             log.error("Erro no processamento do batch: {}", e.getMessage());
@@ -293,9 +293,9 @@ public class BatchProcessingService implements BatchProcessingUseCase {
     }
 
     /**
-     * Cria entidade a partir do profile - método extraído para reduzir código no lambda
+     * Cria instância de domínio PredictionHistory a partir do perfil do cliente.
      */
-    private PredictionHistoryEntity createEntityFromProfile(
+    private PredictionHistory createHistoryFromProfile(
             CustomerProfile p, double threshold, long timestampMillis,
             LocalDateTime batchTimestamp, String requestIp) {
         try {
@@ -305,7 +305,6 @@ public class BatchProcessingService implements BatchProcessingUseCase {
             // 2. Inferência
             float[] prediction = inferencePort.predict(p, features);
 
-            // DEBUG (
             if (Math.random() < 0.001) {
                 log.info("DEBUG probs userId={} p0={} p1={} threshold={}",
                         p.userId(), prediction[0], prediction[1], threshold);
@@ -314,32 +313,30 @@ public class BatchProcessingService implements BatchProcessingUseCase {
             double prob = prediction[1];
             ChurnStatus status = prob >= threshold ? ChurnStatus.WILL_CHURN : ChurnStatus.WILL_STAY;
 
-            // 3. Monta entidade (campos inline para evitar overhead de métodos)
-            PredictionHistoryEntity e = new PredictionHistoryEntity();
-            e.setId(com.hackathon.databeats.churninsight.infra.util.UUIDv7.generateString(timestampMillis));
-            e.setUserId(p.userId());
-            e.setAge(p.age());
-            e.setGender(p.gender());
-            e.setCountry(p.country());
-            e.setSubscriptionType(p.subscriptionType());
-            e.setDeviceType(p.deviceType());
-            e.setListeningTime(p.listeningTime());
-            e.setSongsPlayedPerDay(p.songsPlayedPerDay());
-            e.setSkipRate(p.skipRate());
-            e.setAdsListenedPerWeek(p.adsListenedPerWeek());
-            e.setOfflineListening(p.offlineListening());
-            e.setChurnStatus(status);
-            e.setProbability(prob);
-            e.setCreatedAt(batchTimestamp);
-            e.setRequesterId("batch-file");
-            e.setRequestIp(requestIp);
-            e.setFrustrationIndex((Double) features.get("frustration_index"));
-            e.setAdIntensity((Double) features.get("ad_intensity"));
-            e.setSongsPerMinute((Double) features.get("songs_per_minute"));
-            e.setIsHeavyUser((Boolean) features.get("is_heavy_user"));
-            e.setPremiumNoOffline((Boolean) features.get("premium_no_offline"));
-
-            return e;
+            return PredictionHistory.builder()
+                    .id(com.hackathon.databeats.churninsight.infra.util.UUIDv7.generateString(timestampMillis))
+                    .userId(p.userId())
+                    .age(p.age())
+                    .gender(p.gender())
+                    .country(p.country())
+                    .subscriptionType(p.subscriptionType())
+                    .deviceType(p.deviceType())
+                    .listeningTime(p.listeningTime())
+                    .songsPlayedPerDay(p.songsPlayedPerDay())
+                    .skipRate(p.skipRate())
+                    .adsListenedPerWeek(p.adsListenedPerWeek())
+                    .offlineListening(p.offlineListening())
+                    .churnStatus(status)
+                    .probability(prob)
+                    .createdAt(batchTimestamp)
+                    .requesterId("batch-file")
+                    .requestIp(requestIp)
+                    .frustrationIndex((Double) features.get("frustration_index"))
+                    .adIntensity((Double) features.get("ad_intensity"))
+                    .songsPerMinute((Double) features.get("songs_per_minute"))
+                    .isHeavyUser((Boolean) features.get("is_heavy_user"))
+                    .premiumNoOffline((Boolean) features.get("premium_no_offline"))
+                    .build();
         } catch (Exception ex) {
             log.warn("Falha ao processar userId={} motivo={}", p.userId(), ex.getMessage());
             return null;

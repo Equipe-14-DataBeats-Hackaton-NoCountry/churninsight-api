@@ -1,7 +1,7 @@
 package com.hackathon.databeats.churninsight.infra.adapter.output.persistence.adapter;
 
 import com.hackathon.databeats.churninsight.application.port.output.BatchSavePort;
-import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.entity.PredictionHistoryEntity;
+import com.hackathon.databeats.churninsight.domain.model.PredictionHistory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -50,15 +50,15 @@ public class JdbcBatchPersistenceAdapter implements BatchSavePort {
     }
 
     @Override
-    public void saveAll(List<PredictionHistoryEntity> entities) {
-        if (entities.isEmpty()) return;
+    public void saveAll(List<PredictionHistory> histories) {
+        if (histories.isEmpty()) return;
 
         // Divide em chunks e executa em paralelo máximo
-        List<CompletableFuture<Void>> futures = new ArrayList<>((entities.size() / chunkSize) + 1);
+        List<CompletableFuture<Void>> futures = new ArrayList<>((histories.size() / chunkSize) + 1);
 
-        for (int i = 0; i < entities.size(); i += chunkSize) {
-            int end = Math.min(i + chunkSize, entities.size());
-            List<PredictionHistoryEntity> chunk = entities.subList(i, end);
+        for (int i = 0; i < histories.size(); i += chunkSize) {
+            int end = Math.min(i + chunkSize, histories.size());
+            List<PredictionHistory> chunk = histories.subList(i, end);
 
             futures.add(CompletableFuture.runAsync(() -> insertMultiRow(chunk), dbExecutor));
         }
@@ -74,47 +74,47 @@ public class JdbcBatchPersistenceAdapter implements BatchSavePort {
      * para usar batching padrão do driver JDBC, que é muito mais eficiente
      * quando rewriteBatchedStatements=true.
      */
-    private void insertMultiRow(List<PredictionHistoryEntity> entities) {
-        if (entities.isEmpty()) return;
+    private void insertMultiRow(List<PredictionHistory> histories) {
+        if (histories.isEmpty()) return;
 
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
         try {
-             jdbcTemplate.batchUpdate(INSERT_SQL, entities, entities.size(),
-                (ps, e) -> {
+             jdbcTemplate.batchUpdate(INSERT_SQL, histories, histories.size(),
+                (ps, h) -> {
                     int col = 1;
-                    ps.setString(col++, e.getId());
-                    ps.setString(col++, e.getUserId());
-                    ps.setString(col++, e.getGender());
-                    ps.setInt(col++, e.getAge());
-                    ps.setString(col++, e.getCountry());
-                    ps.setString(col++, e.getSubscriptionType());
-                    ps.setDouble(col++, e.getListeningTime());
-                    ps.setInt(col++, e.getSongsPlayedPerDay());
-                    ps.setDouble(col++, e.getSkipRate());
-                    ps.setInt(col++, e.getAdsListenedPerWeek());
-                    ps.setString(col++, e.getDeviceType());
-                    ps.setBoolean(col++, e.isOfflineListening());
-                    ps.setString(col++, e.getChurnStatus().name());
-                    ps.setDouble(col++, e.getProbability());
-                    ps.setTimestamp(col++, e.getCreatedAt() != null ? Timestamp.valueOf(e.getCreatedAt()) : now);
-                    ps.setString(col++, e.getRequesterId());
-                    ps.setString(col++, e.getRequestIp());
-                    ps.setDouble(col++, e.getFrustrationIndex());
-                    ps.setDouble(col++, e.getAdIntensity());
-                    ps.setDouble(col++, e.getSongsPerMinute());
-                    ps.setBoolean(col++, e.getIsHeavyUser());
-                    ps.setBoolean(col++, e.getPremiumNoOffline());
+                    ps.setString(col++, h.id());
+                    ps.setString(col++, h.userId());
+                    ps.setString(col++, h.gender());
+                    ps.setInt(col++, h.age() != null ? h.age() : 0);
+                    ps.setString(col++, h.country());
+                    ps.setString(col++, h.subscriptionType());
+                    ps.setDouble(col++, h.listeningTime() != null ? h.listeningTime() : 0.0);
+                    ps.setInt(col++, h.songsPlayedPerDay() != null ? h.songsPlayedPerDay() : 0);
+                    ps.setDouble(col++, h.skipRate() != null ? h.skipRate() : 0.0);
+                    ps.setInt(col++, h.adsListenedPerWeek() != null ? h.adsListenedPerWeek() : 0);
+                    ps.setString(col++, h.deviceType());
+                    ps.setBoolean(col++, h.offlineListening() != null && h.offlineListening());
+                    ps.setString(col++, h.churnStatus().name());
+                    ps.setDouble(col++, h.probability() != null ? h.probability() : 0.0);
+                    ps.setTimestamp(col++, h.createdAt() != null ? Timestamp.valueOf(h.createdAt()) : now);
+                    ps.setString(col++, h.requesterId());
+                    ps.setString(col++, h.requestIp());
+                    ps.setObject(col++, h.frustrationIndex());
+                    ps.setObject(col++, h.adIntensity());
+                    ps.setObject(col++, h.songsPerMinute());
+                    ps.setObject(col++, h.isHeavyUser());
+                    ps.setObject(col++, h.premiumNoOffline());
                 });
         } catch (Exception e) {
-             log.error("Erro ao salvar batch de {} registros: {}", entities.size(), e.getMessage());
+             log.error("Erro ao salvar batch de {} registros: {}", histories.size(), e.getMessage());
              throw e;
         }
     }
 
     @Override
-    public void saveBatch(List<PredictionHistoryEntity> entities, int batchSize) {
-        saveAll(entities);
+    public void saveBatch(List<PredictionHistory> histories, int batchSize) {
+        saveAll(histories);
     }
 
     @Override

@@ -7,16 +7,9 @@ import com.hackathon.databeats.churninsight.infra.adapter.output.persistence.ada
  * Port de saída para persistência do histórico de predições.
  *
  * <p>Define o contrato para armazenamento de predições de churn com foco em auditoria.
- * Utiliza modelo de domínio ({@link PredictionHistory}) em vez de entidades JPA,
- * garantindo isolamento da camada de aplicação de detalhes de infraestrutura.</p>
- *
- * <p><b>Responsabilidade:</b> Persistir o resultado da predição com todos os metadados
- * necessários para rastreabilidade e análise posterior.</p>
- *
- * <p><b>Implementações:</b></p>
- * <ul>
- *   <li>{@link MySQLHistoryAdapter}</li>
- * </ul>
+ * Utiliza modelo de domínio ({@link com.hackathon.databeats.churninsight.domain.model.PredictionHistory})
+ * em vez de entidades JPA, garantindo isolamento da camada de aplicação de detalhes
+ * de infraestrutura.</p>
  *
  * @author Equipe ChurnInsight
  * @version 1.0.0
