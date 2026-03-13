@@ -104,11 +104,11 @@ class PredictionControllerIntegrationTest {
     void shouldReturn200WithValidData() throws Exception {
         // Arrange - mock da resposta do use case
         PredictionResult mockResult = PredictionResult.builder()
-                .label(ChurnStatus.WILL_STAY)
-                .probability(0.25)
-                .probabilities(new float[]{0.75f, 0.25f})
-                .classProbabilities(Map.of("WILL_STAY", 0.75f, "WILL_CHURN", 0.25f))
-                .build();
+            .label(ChurnStatus.WILL_STAY)
+            .probability(0.25)
+            .probabilities(new float[]{0.75f, 0.25f})
+            .classProbabilities(Map.of("WILL_STAY", 0.75f, "WILL_CHURN", 0.25f))
+            .build();
 
         when(predictChurnUseCase.predict(any(CustomerProfile.class), anyString(), anyString()))
             .thenReturn(mockResult);
