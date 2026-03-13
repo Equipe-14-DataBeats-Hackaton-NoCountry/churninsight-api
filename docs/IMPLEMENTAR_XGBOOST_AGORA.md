@@ -303,6 +303,7 @@ files.download('modelo_xgboost.onnx')
 ```python
 # CÉLULA 10: Criar metadata.json
 import json
+from google.colab import files
 
 metadata = {
     "model_type": "XGBoost",
@@ -318,6 +319,9 @@ metadata = {
 
 with open("metadata.json", "w") as f:
     json.dump(metadata, f, indent=2)
+
+print("✅ Metadata criado: metadata.json")
+files.download('metadata.json')
 
 print("✅ Metadata criado: metadata.json")
 files.download('metadata.json')
